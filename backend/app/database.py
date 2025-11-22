@@ -21,10 +21,8 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         yield session
 
-
 # Optional alias so other modules can depend on `get_db`
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Alias for get_session(), used by some dependencies."""
-
     async for session in get_session():
         yield session

@@ -1,7 +1,7 @@
 # diag_db.py
 from sqlalchemy import text
-from skylynx_digital.core.database import SessionLocal
-from skylynx_digital.core.tenant import id as tenant_id
+from nexacore_erp.core.database import SessionLocal
+from nexacore_erp.core.tenant import id as tenant_id
 
 def run():
     with SessionLocal() as s:

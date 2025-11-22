@@ -1,7 +1,7 @@
 [project]
-name = "skylynx-backend"
+name = "nexacore-backend"
 version = "0.1.0"
-description = "FastAPI backend for Skylynx ERP"
+description = "FastAPI backend for NexaCore ERP"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.110,<0.112",

@@ -1,7 +1,7 @@
-# Skylynx ERP Beginner Field Manual (GCP Edition)
+# NexaCore ERP Beginner Field Manual (GCP Edition)
 
 Welcome! This field manual is written for someone who has never deployed
-software before but wants to take the Skylynx ERP desktop app online for
+software before but wants to take the NexaCore ERP desktop app online for
 multiple companies. Every instruction below is intentionally explicit—expect
 directions such as **exact console menus to click**, **buttons to press**, and
 the **commands to type**. Work through the sections in order. By the end you’ll
@@ -17,7 +17,7 @@ client updates, packaging, and releases.
 ## 0. Orientation checklist (15 minutes)
 
 1. **Organize your workspace**
-   1. Create a folder on your computer named `skylynx-online`.
+   1. Create a folder on your computer named `nexacore-online`.
    2. Inside it, clone your GitHub repository:
       ```bash
       git clone https://github.com/<your-username>/<your-repo>.git
@@ -48,7 +48,7 @@ client updates, packaging, and releases.
 
 4. **Document credentials in Bitwarden**
    1. Open https://vault.bitwarden.com and sign in.
-   2. Create a new folder named **Skylynx ERP** (`My Vault → Folders → +`).
+   2. Create a new folder named **NexaCore ERP** (`My Vault → Folders → +`).
    3. Any password, API key, or secret generated during this manual goes into
       that folder so nothing is lost.
 
@@ -62,7 +62,7 @@ client updates, packaging, and releases.
 2. At the top navigation bar, click the **project dropdown** (usually shows
    “Select a project” or an existing project name).
 3. Click **New Project**.
-4. Set the project name to `skylynx-online` (or any name you like).
+4. Set the project name to `nexacore-online` (or any name you like).
 5. Choose your billing account when prompted, then click **Create**.
 6. Wait for the toast notification “Project created”. Click the notification or
    re-open the project dropdown and select the new project.
@@ -100,7 +100,7 @@ client updates, packaging, and releases.
 1. Open **VPC network → VPC networks**.
 2. Click **Create VPC network**.
 3. Fill in the form:
-   - **Name**: `skylynx-vpc`
+   - **Name**: `nexacore-vpc`
    - **Subnets**: choose **Custom**.
 4. Under **Subnets**, click **Add subnet** twice to create:
    - **Public subnet**: name `public-subnet`, region `us-central1` (or your
@@ -119,24 +119,24 @@ client updates, packaging, and releases.
 2. Click **Create firewall rule**.
 3. Create a rule named `allow-ssh-from-your-ip`:
    - **Targets**: `Specified target tags`
-   - **Target tags**: `skylynx-app`
+   - **Target tags**: `nexacore-app`
    - **Source IPv4 ranges**: enter your home/office public IP (find it via
      https://ifconfig.me) followed by `/32`, e.g., `203.0.113.42/32`.
    - **Protocols and ports**: check `tcp`, enter `22`.
 4. Click **Create**.
 5. Repeat to create a rule named `allow-https`:
    - **Targets**: `Specified target tags`
-   - **Target tags**: `skylynx-app`
+   - **Target tags**: `nexacore-app`
    - **Source IPv4 ranges**: `0.0.0.0/0`
    - **Protocols and ports**: check `tcp`, enter `443`.
 6. Later, when you spin up the Compute Engine VM, you’ll assign the
-   `skylynx-app` network tag so these rules apply automatically.
+   `nexacore-app` network tag so these rules apply automatically.
 
 ### 2.3 Reserve static IPs (for HTTPS endpoints)
 
 1. Navigate to **VPC network → External IP addresses**.
 2. Click **Reserve static address**.
-3. Name it `skylynx-app-ip`, set **Type** to `Regional`, choose the same region
+3. Name it `nexacore-app-ip`, set **Type** to `Regional`, choose the same region
    as your VM, and leave the network tier as `Premium`.
 4. Click **Reserve**.
 
@@ -152,7 +152,7 @@ Record the allocated IP address in Bitwarden.
 2. Click **Create instance**.
 3. Select **PostgreSQL**.
 4. Configure:
-   - **Instance ID**: `skylynx-postgres`
+   - **Instance ID**: `nexacore-postgres`
    - **Password**: click **Generate**, copy the password into Bitwarden under
      “Cloud SQL Postgres admin”.
    - **Region**: match your VPC region (e.g., `us-central1`).
@@ -162,7 +162,7 @@ Record the allocated IP address in Bitwarden.
    - Expand **Networking** → set **Private IP** → click **Set up private
      services access**.
    - Follow the prompt to create a private service connection using your VPC.
-   - After creation, choose `skylynx-vpc` and the `private-subnet`.
+   - After creation, choose `nexacore-vpc` and the `private-subnet`.
 6. Under **Authorized networks**, **do not** add public networks—stick to
    private connectivity for security.
 7. Click **Create instance**. This can take a few minutes.
@@ -171,10 +171,10 @@ Record the allocated IP address in Bitwarden.
 
 1. Once the instance status is **RUNNABLE**, click the instance name.
 2. In the top tab bar, select **Databases** → click **Create database**.
-   - Name: `skylynx`
+   - Name: `nexacore`
    - Click **Create**.
 3. Next, select the **Users** tab → **Add user account**.
-   - **User name**: `skylynx_app`
+   - **User name**: `nexacore_app`
    - **Password**: click **Generate**, store in Bitwarden under
      “Cloud SQL PostgreSQL app user”.
    - **Type**: `Built-in database user`
@@ -194,7 +194,7 @@ Record the allocated IP address in Bitwarden.
 1. Navigate to **Security → Secret Manager**.
 2. Click **Create Secret** for each secret:
    - **Name**: `DATABASE_URL`
-     - **Secret value**: `postgresql+asyncpg://skylynx_app:<PASSWORD>@/skylynx?host=/cloudsql/<INSTANCE_CONNECTION_NAME>`
+     - **Secret value**: `postgresql+asyncpg://nexacore_app:<PASSWORD>@/nexacore?host=/cloudsql/<INSTANCE_CONNECTION_NAME>`
        (replace placeholders). This format works with the Cloud SQL Proxy socket.
    - **Name**: `JWT_SECRET`
      - Generate a 64-character random string (`openssl rand -hex 32`) and paste it.
@@ -213,7 +213,7 @@ Record the allocated IP address in Bitwarden.
 2. If prompted to enable the API, click **Enable** and wait.
 3. Click **Create Instance**.
 4. Configure the basics:
-   - **Name**: `skylynx-backend`
+   - **Name**: `nexacore-backend`
    - **Region/Zone**: match your database (e.g., `us-central1-a`).
    - **Machine configuration**: choose **e2-small (2 vCPU, 2 GB RAM)**.
 5. Under **Boot disk**, click **Change** → select **Debian 12 (Bookworm)**.
@@ -226,10 +226,10 @@ Record the allocated IP address in Bitwarden.
 6. Under **Firewall**, check **Allow HTTPS traffic** (HTTP optional if you plan
    to set up an HTTPS load balancer later).
 7. Expand **Networking**:
-   - **Network tags**: add `skylynx-app` (so the firewall rules apply).
+   - **Network tags**: add `nexacore-app` (so the firewall rules apply).
    - **Network interfaces**: ensure the interface is attached to
-     `skylynx-vpc / public-subnet`.
-   - **External IP**: choose the reserved static IP `skylynx-app-ip`.
+     `nexacore-vpc / public-subnet`.
+   - **External IP**: choose the reserved static IP `nexacore-app-ip`.
 8. Click **Create**. Wait for the VM to start.
 
 ### 5.2 Install Docker & Docker Compose (Debian/Ubuntu images)
@@ -293,7 +293,7 @@ Record the allocated IP address in Bitwarden.
    After=network.target
 
    [Service]
-   ExecStart=/usr/local/bin/cloud-sql-proxy -instances=<PROJECT>:<REGION>:skylynx-postgres=tcp:5432
+   ExecStart=/usr/local/bin/cloud-sql-proxy -instances=<PROJECT>:<REGION>:nexacore-postgres=tcp:5432
    Restart=always
 
    [Install]
@@ -318,7 +318,7 @@ Record the allocated IP address in Bitwarden.
 1. In the Google Cloud console, go to **IAM & Admin → Service Accounts**.
 2. Click **Create Service Account**.
 3. Provide:
-   - **Name**: `skylynx-backend-sa`
+   - **Name**: `nexacore-backend-sa`
    - **ID** auto-fills; click **Create and continue**.
 4. Grant roles:
    - `Cloud SQL Client`
@@ -328,18 +328,18 @@ Record the allocated IP address in Bitwarden.
 7. Download the JSON file and store it securely (Bitwarden → Attachments).
 8. Upload the key to your VM (from your local terminal):
    ```bash
-   gcloud compute scp /path/to/key.json skylynx-backend:~/service-account.json --zone=<ZONE>
+   gcloud compute scp /path/to/key.json nexacore-backend:~/service-account.json --zone=<ZONE>
    ```
 9. On the VM SSH session, move the key to a protected location:
    ```bash
-   sudo mkdir -p /etc/skylynx
-   sudo mv ~/service-account.json /etc/skylynx/service-account.json
-   sudo chmod 600 /etc/skylynx/service-account.json
+   sudo mkdir -p /etc/nexacore
+   sudo mv ~/service-account.json /etc/nexacore/service-account.json
+   sudo chmod 600 /etc/nexacore/service-account.json
    ```
 10. Configure the Cloud SQL Proxy service to use the key by editing
     `/etc/systemd/system/cloud-sql-proxy.service` and adding at the end of the
     `ExecStart` line:
-    ` --credentials-file=/etc/skylynx/service-account.json`
+    ` --credentials-file=/etc/nexacore/service-account.json`
 11. Reload and restart the service:
     ```bash
     sudo systemctl daemon-reload
@@ -349,7 +349,7 @@ Record the allocated IP address in Bitwarden.
 13. Authenticate the Google Cloud CLI on the VM so deployment scripts can read
     secrets:
     ```bash
-    gcloud auth activate-service-account --key-file=/etc/skylynx/service-account.json
+    gcloud auth activate-service-account --key-file=/etc/nexacore/service-account.json
     gcloud config set project <PROJECT_ID>
     ```
 
@@ -370,7 +370,7 @@ Record the allocated IP address in Bitwarden.
 3. Create `backend/pyproject.toml` with dependencies:
 ```toml
 [project]
-name = "skylynx-backend"
+name = "nexacore-backend"
 version = "0.1.0"
 requires-python = ">=3.11"
 
@@ -391,14 +391,14 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 ```
 4. Create `backend/app/main.py` with a starter FastAPI app and health check.
-5. Copy existing SQLAlchemy models from `skylynx_erp/database/models` into
+5. Copy existing SQLAlchemy models from `nexacore_erp/database/models` into
    `backend/app/models`. Keep the `account_id` field for multi-tenancy.
 
 ### 7.2 Configure environment management
 
 1. Create `.env` in the `backend` folder:
    ```dotenv
-   DATABASE_URL=postgresql+asyncpg://skylynx_app:<password>@127.0.0.1:5432/skylynx
+   DATABASE_URL=postgresql+asyncpg://nexacore_app:<password>@127.0.0.1:5432/nexacore
    SECRET_KEY=replace-me
    ```
    When running on the VM, the Cloud SQL Proxy listens on `127.0.0.1:5432`, so
@@ -497,7 +497,7 @@ build-backend = "setuptools.build_meta"
 
 1. In Google Cloud, go to **Artifact Registry → Repositories**.
 2. Click **Create Repository**.
-   - Name: `skylynx-backend`
+   - Name: `nexacore-backend`
    - Format: `Docker`
    - Location type: `Region`
    - Region: same as VM
@@ -510,8 +510,8 @@ build-backend = "setuptools.build_meta"
    ```
 4. Build and push the image:
    ```bash
-   docker build -t <REGION>-docker.pkg.dev/<PROJECT_ID>/skylynx-backend/api:0.1.0 backend
-   docker push <REGION>-docker.pkg.dev/<PROJECT_ID>/skylynx-backend/api:0.1.0
+   docker build -t <REGION>-docker.pkg.dev/<PROJECT_ID>/nexacore-backend/api:0.1.0 backend
+   docker push <REGION>-docker.pkg.dev/<PROJECT_ID>/nexacore-backend/api:0.1.0
    ```
 
 ### 8.2 Create a deployment script on the VM
@@ -523,7 +523,7 @@ build-backend = "setuptools.build_meta"
    set -euo pipefail
 
    IMAGE="$1"
-   CONTAINER_NAME=skylynx-backend
+   CONTAINER_NAME=nexacore-backend
 
    docker pull "$IMAGE"
    docker stop "$CONTAINER_NAME" 2>/dev/null || true
@@ -539,7 +539,7 @@ build-backend = "setuptools.build_meta"
      "$IMAGE"
    ```
 3. Make it executable: `chmod +x deploy.sh`.
-4. Test the script: `./deploy.sh <REGION>-docker.pkg.dev/<PROJECT_ID>/skylynx-backend/api:0.1.0`.
+4. Test the script: `./deploy.sh <REGION>-docker.pkg.dev/<PROJECT_ID>/nexacore-backend/api:0.1.0`.
 5. Verify the container is running: `docker ps`.
 6. From your local machine, run `curl https://<STATIC_IP>/health` (or open in
    browser). Configure HTTPS via an HTTPS load balancer or Caddy/nginx inside
@@ -551,7 +551,7 @@ build-backend = "setuptools.build_meta"
 
 ### 9.1 Create an API service layer
 
-1. Inside the existing `skylynx_erp` package, create `services/api_client.py`.
+1. Inside the existing `nexacore_erp` package, create `services/api_client.py`.
 2. Implement functions using `httpx.AsyncClient` for login, listing employees,
    etc.
 3. Store the base URL in a config file (`config.json`) and add logic to fetch it
@@ -560,7 +560,7 @@ build-backend = "setuptools.build_meta"
 ### 9.2 Replace SQLite interactions
 
 1. Search the repo for `sqlite` references (`rg "sqlite"`).
-2. For each DAO (e.g., `skylynx_erp/database/employee_repository.py`):
+2. For each DAO (e.g., `nexacore_erp/database/employee_repository.py`):
    - Replace direct SQLAlchemy session usage with calls to the API client.
    - Handle authentication tokens by storing them in memory when the user logs
      in.
@@ -591,17 +591,17 @@ build-backend = "setuptools.build_meta"
 
 1. Activate your virtual environment.
 2. Install PyInstaller: `pip install pyinstaller`.
-3. Create `skylynx.spec`:
+3. Create `nexacore.spec`:
    ```python
    block_cipher = None
 
    a = Analysis([
-       'skylynx_launcher.py',
+       'nexacore_launcher.py',
    ],
    ...)
    ```
    Customize the spec to include Qt resources (`binaries`, `datas`).
-4. Run `pyinstaller skylynx.spec`.
+4. Run `pyinstaller nexacore.spec`.
 5. Test the executable on a clean Windows VM. Document the steps (copy zipped
    installer, run it, verify login screen).
 
@@ -610,9 +610,9 @@ build-backend = "setuptools.build_meta"
 1. Create `updater/manifest.json` hosted on GitHub Pages or Google Cloud
    Storage. Structure:
    ```json
-   { "latest_version": "1.0.0", "download_url": "https://storage.googleapis.com/<bucket>/Skylynx-1.0.0.exe" }
+   { "latest_version": "1.0.0", "download_url": "https://storage.googleapis.com/<bucket>/NexaCore-1.0.0.exe" }
    ```
-2. Write `skylynx_launcher.py` that:
+2. Write `nexacore_launcher.py` that:
    - Fetches the manifest (`requests.get`).
    - Compares `latest_version` to local version stored in a file.
    - Downloads the installer if a newer version exists (use `requests` with
@@ -620,7 +620,7 @@ build-backend = "setuptools.build_meta"
    - Launches the main app.
 3. Upload installers to a Google Cloud Storage bucket:
    - In console: **Cloud Storage → Buckets → Create**.
-   - Name: `skylynx-installers-<unique-id>`.
+   - Name: `nexacore-installers-<unique-id>`.
    - Location type: `Region`, choose same region.
    - Access control: `Uniform`.
    - Upload your `.exe` via the UI (`Upload Files`).
@@ -685,11 +685,11 @@ build-backend = "setuptools.build_meta"
          - name: Build and push image
            run: |
              gcloud auth configure-docker <REGION>-docker.pkg.dev
-             docker build -t <REGION>-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/skylynx-backend/api:${GITHUB_REF_NAME} backend
-             docker push <REGION>-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/skylynx-backend/api:${GITHUB_REF_NAME}
+             docker build -t <REGION>-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/nexacore-backend/api:${GITHUB_REF_NAME} backend
+             docker push <REGION>-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/nexacore-backend/api:${GITHUB_REF_NAME}
          - name: Trigger remote deploy script
            run: |
-             gcloud compute ssh skylynx-backend --zone=<ZONE> --command "~/deploy.sh <REGION>-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/skylynx-backend/api:${GITHUB_REF_NAME}"
+             gcloud compute ssh nexacore-backend --zone=<ZONE> --command "~/deploy.sh <REGION>-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/nexacore-backend/api:${GITHUB_REF_NAME}"
    ```
 2. Store the required secrets in the GitHub repository (`Settings → Secrets and
    variables → Actions → New repository secret`).

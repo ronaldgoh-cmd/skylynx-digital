@@ -19,7 +19,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # 1) OLD DB URL (change this if needed)
-OLD_DB_URL = "sqlite:///C:/Users/rev-e/Desktop/skylynx_digital_project/skylynx_digital/database/skylynx_employeemanagement.db"
+OLD_DB_URL = "sqlite:///C:/Users/rev-e/Desktop/nexacore_erp_project/nexacore_erp/database/nexacore_employeemanagement.db"
 
 engine_old = create_engine(OLD_DB_URL, future=True)
 SessionOld = sessionmaker(bind=engine_old, autoflush=False, autocommit=False)
@@ -29,11 +29,11 @@ import sys
 from pathlib import Path
 
 # --- make sure project root is on sys.path ---
-BASE_DIR = Path(__file__).resolve().parents[1]  # C:/Users/.../skylynx_digital_project
+BASE_DIR = Path(__file__).resolve().parents[1]  # C:/Users/.../nexacore_erp_project
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from skylynx_digital.modules.employee_management.models import (
+from nexacore_erp.modules.employee_management.models import (
     Employee,
     SalaryHistory,
     Holiday,
@@ -43,7 +43,7 @@ from skylynx_digital.modules.employee_management.models import (
     LeaveEntitlement,
 )
 
-from skylynx_digital.core import api_employees
+from nexacore_erp.core import api_employees
 
 
 def migrate():

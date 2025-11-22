@@ -3,25 +3,25 @@ version: "3.9"
 services:
   db:
     image: postgres:15
-    container_name: skylynx-db
+    container_name: nexacore-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: skylynx
+      POSTGRES_DB: nexacore
     ports:
       # Host port 5433 -> container port 5432 (so it doesn't clash with your Windows Postgres)
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d skylynx"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nexacore"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   api:
     build: .
-    container_name: skylynx-backend
+    container_name: nexacore-backend
     depends_on:
       db:
         condition: service_healthy
