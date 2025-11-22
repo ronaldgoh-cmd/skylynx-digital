@@ -1,4 +1,4 @@
-# nexacore_erp/app.py
+# skylynx_digital/app.py
 import sys
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
@@ -92,9 +92,9 @@ def run_app():
     QGuiApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = QApplication.instance() or QApplication(sys.argv)
-    app.setApplicationName("NexaCore ERP")
-    app.setOrganizationName("NexaCore Digital Solutions")
-    app.setOrganizationDomain("nexacore.local")
+    app.setApplicationName("Skylynx ERP")
+    app.setOrganizationName("Skylynx Digital")
+    app.setOrganizationDomain("skylynx.local")
 
     # Login loop: close main window on logout, return to login dialog only
     should_quit = False

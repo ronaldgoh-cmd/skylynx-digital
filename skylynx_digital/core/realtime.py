@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 from PySide6.QtCore import QObject, Signal
 
 # Reuse the same config + token logic as the HTTP client
-from nexacore_erp.services.api_client import load_default_credentials, _load_base_url
+from skylynx_digital.services.api_client import load_default_credentials, _load_base_url
 
 try:
     # Provided by `pip install websocket-client`
@@ -48,7 +48,7 @@ class EmployeeRealtimeClient(QObject):
         if not token:
             raise RuntimeError(
                 "No API access token configured for WebSocket. "
-                "Set it in config.json or NEXACORE_API_TOKEN."
+                "Set it in config.json or SKYLYNX_API_TOKEN."
             )
 
         base = _load_base_url()

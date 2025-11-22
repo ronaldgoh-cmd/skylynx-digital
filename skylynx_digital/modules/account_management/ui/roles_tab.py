@@ -10,8 +10,8 @@ from PySide6.QtWidgets import (
     QTreeWidget, QTreeWidgetItem, QSplitter, QInputDialog, QDialogButtonBox
 )
 
-from nexacore_erp.core.database import SessionLocal
-from nexacore_erp.core.plugins import discover_modules
+from skylynx_digital.core.database import SessionLocal
+from skylynx_digital.core.plugins import discover_modules
 from ..models import Role, Permission, RolePermission, UserRole, AccessRule  # noqa: F401
 
 _BASE_PERMS = [

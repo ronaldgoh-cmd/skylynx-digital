@@ -6,8 +6,8 @@ functions while the real work is done via the HTTP backend.
 from typing import Any, Dict, List
 import asyncio
 
-from nexacore_erp.services.api_client import APIClient, AuthError, load_default_credentials
-from nexacore_erp.services.employees_service import (
+from skylynx_digital.services.api_client import APIClient, AuthError, load_default_credentials
+from skylynx_digital.services.employees_service import (
     fetch_all_employees,
     create_employee,
 )
@@ -18,8 +18,8 @@ def _ensure_authenticated() -> None:
     Make sure the shared API client has a token before the UI calls API helpers.
 
     Priority for credentials:
-    1. Environment variables (NEXACORE_API_TOKEN or username/password/account_id)
-    2. nexacore_erp/config.json values (api_access_token OR api_username/api_password/api_account_id)
+    1. Environment variables (SKYLYNX_API_TOKEN or username/password/account_id)
+    2. skylynx_digital/config.json values (api_access_token OR api_username/api_password/api_account_id)
     """
 
     client = APIClient.get()
@@ -36,9 +36,9 @@ def _ensure_authenticated() -> None:
     missing = [k for k in ("username", "password", "account_id") if not creds.get(k)]
     if missing:
         raise AuthError(
-            "Missing API credentials. Set environment variables (NEXACORE_API_USERNAME/"
-            "PASSWORD/ACCOUNT_ID or NEXACORE_API_TOKEN) or fill api_username/api_password/"
-            "api_account_id in nexacore_erp/config.json."
+            "Missing API credentials. Set environment variables (SKYLYNX_API_USERNAME/"
+            "PASSWORD/ACCOUNT_ID or SKYLYNX_API_TOKEN) or fill api_username/api_password/"
+            "api_account_id in skylynx_digital/config.json."
         )
 
     asyncio.run(

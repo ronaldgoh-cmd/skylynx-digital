@@ -32,7 +32,7 @@ def _load_modules() -> list[Tuple[dict, BaseModule]]:
         with open(manifest, "r", encoding="utf-8") as f:
             info = json.load(f)
 
-        module_name = f"nexacore_erp.modules.{entry}.module"
+        module_name = f"skylynx_digital.modules.{entry}.module"
         spec = importlib.util.spec_from_file_location(module_name, module_py)
         if not spec or not spec.loader:
             continue

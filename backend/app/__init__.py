@@ -1,1 +1,1 @@
-"""NexaCore ERP FastAPI backend package."""
+"""Skylynx ERP FastAPI backend package."""

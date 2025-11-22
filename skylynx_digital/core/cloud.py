@@ -124,7 +124,7 @@ def digitalocean_provisioning_plan(env: CloudEnvironment | None = None) -> List[
     else:
         steps.append(
             ProvisioningStep(
-                title="Enter API credentials inside NexaCore",
+                title="Enter API credentials inside Skylynx",
                 details="Capture the API endpoint, Spaces bucket and token so the desktop client can begin syncing when ready.",
             )
         )

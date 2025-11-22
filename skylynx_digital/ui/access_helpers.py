@@ -1,9 +1,9 @@
-# nexacore_erp/ui/access_helpers.py
+# skylynx_digital/ui/access_helpers.py
 from __future__ import annotations
 from typing import Dict, Optional
 from PySide6.QtWidgets import QTabWidget, QLabel
-from nexacore_erp.core.auth import get_current_user
-from nexacore_erp.core.permissions import can_view
+from skylynx_digital.core.auth import get_current_user
+from skylynx_digital.core.permissions import can_view
 
 def apply_tab_access(
     tabs: QTabWidget,

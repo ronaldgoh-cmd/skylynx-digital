@@ -1,4 +1,4 @@
-# nexacore_erp/modules/account_management/module.py
+# skylynx_digital/modules/account_management/module.py
 from __future__ import annotations
 import json, os
 from sqlalchemy import text
