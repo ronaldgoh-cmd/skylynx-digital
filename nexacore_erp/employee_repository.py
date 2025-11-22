@@ -18,8 +18,11 @@ def _ensure_authenticated() -> None:
     Make sure the shared API client has a token before the UI calls API helpers.
 
     Priority for credentials:
-    1. Environment variables (NEXACORE_API_TOKEN or username/password/account_id)
-    2. nexacore_erp/config.json values (api_access_token OR api_username/api_password/api_account_id)
+    1. Environment variables (SKYLYNX_API_TOKEN or SKYLYNX_API_USERNAME /
+       SKYLYNX_API_PASSWORD / SKYLYNX_API_ACCOUNT_ID). Legacy NEXACORE_* values
+       are still read for compatibility.
+    2. nexacore_erp/config.json values (api_access_token OR api_username /
+       api_password / api_account_id)
     """
 
     client = APIClient.get()
@@ -36,9 +39,9 @@ def _ensure_authenticated() -> None:
     missing = [k for k in ("username", "password", "account_id") if not creds.get(k)]
     if missing:
         raise AuthError(
-            "Missing API credentials. Set environment variables (NEXACORE_API_USERNAME/"
-            "PASSWORD/ACCOUNT_ID or NEXACORE_API_TOKEN) or fill api_username/api_password/"
-            "api_account_id in nexacore_erp/config.json."
+            "Missing API credentials. Set environment variables (SKYLYNX_API_USERNAME/"
+            "PASSWORD/ACCOUNT_ID or SKYLYNX_API_TOKEN; NEXACORE_* also works) or fill "
+            "api_username/api_password/api_account_id in nexacore_erp/config.json."
         )
 
     asyncio.run(

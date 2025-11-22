@@ -1,8 +1,8 @@
 {
-  "api_base_url": "http://34.87.155.9:8000",
-  "api_access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InN1cGVyYWRtaW5pc3RyYXRvciIsImFjY291bnRfaWQiOiJkZWZhdWx0IiwiaWF0IjoxNzYzODA3NzU2LCJleHAiOjIwNzkxNjc3NTZ9.p9NX59MsNrPvife1zfLEVylRk0B3HQglhjZZACJrEPA",
-  "api_token_expires_at": "2035-11-20T10:35:56.423627",
-  "api_username": "superadministrator",
+  "api_base_url": "",
+  "api_access_token": "",
+  "api_token_expires_at": "",
+  "api_username": "",
   "api_password": "",
-  "api_account_id": "default"
+  "api_account_id": ""
 }
