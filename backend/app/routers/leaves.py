@@ -10,10 +10,14 @@ router = APIRouter(prefix="/leaves", tags=["leaves"])
 
 
 @router.get("/", response_model=list[schemas.LeaveOut])
-def list_all(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+def list_all(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db_session)):
     return leaves.list_leaves(db, company_id=current_user.company_id)
 
 
 @router.post("/", response_model=schemas.LeaveOut)
-def create(leave_in: schemas.LeaveCreate, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+def create(
+    leave_in: schemas.LeaveCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+):
     return leaves.create_leave(db, company_id=current_user.company_id, leave_in=leave_in)
