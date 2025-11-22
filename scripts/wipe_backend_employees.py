@@ -5,8 +5,8 @@ Danger: this script deletes ALL employees for the current account
 on the backend API.
 
 Make sure:
-  - NEXACORE_API_BASE is set, e.g. http://34.87.155.9:8000
-  - NEXACORE_API_TOKEN is a valid Bearer token for the right account
+  - skylynx_API_BASE is set, e.g. http://34.87.155.9:8000
+  - skylynx_API_TOKEN is a valid Bearer token for the right account
 """
 
 import os
@@ -14,11 +14,11 @@ import sys
 from pathlib import Path
 
 # --- ensure project root on sys.path ---
-BASE_DIR = Path(__file__).resolve().parents[1]  # .../nexacore_erp_project
+BASE_DIR = Path(__file__).resolve().parents[1]  # .../skylynx_digital_project
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from nexacore_erp.core import api_employees  # uses same base URL + token
+from skylynx_digital.core import api_employees  # uses same base URL + token
 
 
 def wipe_employees():

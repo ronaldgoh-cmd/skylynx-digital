@@ -1,4 +1,4 @@
-# nexacore_erp/ui/login_dialog.py
+# skylynx_digital/ui/login_dialog.py
 from __future__ import annotations
 
 import asyncio
@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QPixmap
 
-from nexacore_erp.services.api_client import get_api_client
+from skylynx_digital.services.api_client import get_api_client
 
 
 class LoginDialog(QDialog):

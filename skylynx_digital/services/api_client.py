@@ -3,7 +3,7 @@ HTTP API client for talking to the Skylynx Digital backend.
 
 Usage pattern (later you will call this from your Qt code):
 
-    from nexacore_erp.services.api_client import get_api_client
+    from skylynx_digital.services.api_client import get_api_client
 
     client = get_api_client()
 
@@ -37,20 +37,20 @@ def _load_base_url() -> str:
 
     Priority:
     1. Environment variable SKYLYNX_API_BASE_URL (preferred)
-    2. Environment variable NEXACORE_API_BASE_URL or legacy NEXACORE_API_BASE
+    2. Environment variable skylynx_API_BASE_URL or legacy skylynx_API_BASE
        (kept for backward compatibility)
-    3. nexacore_erp/config.json -> {"api_base_url": "..."}
+    3. skylynx_digital/config.json -> {"api_base_url": "..."}
     4. Default: http://127.0.0.1:8000
     """
     env_url = (
         os.getenv("SKYLYNX_API_BASE_URL")
-        or os.getenv("NEXACORE_API_BASE_URL")
-        or os.getenv("NEXACORE_API_BASE")
+        or os.getenv("skylynx_API_BASE_URL")
+        or os.getenv("skylynx_API_BASE")
     )
     if env_url:
         return env_url.rstrip("/")
 
-    # config.json lives one level above this file (inside nexacore_erp)
+    # config.json lives one level above this file (inside skylynx_digital)
     config_path = Path(__file__).resolve().parent.parent / "config.json"
     if config_path.exists():
         try:
@@ -72,27 +72,27 @@ def _load_default_credentials() -> Dict[str, Optional[str]]:
     Load default credentials from environment or config.json.
 
     Environment variables win over config.json so you can override without
-    editing files (new SKYLYNX_* names first, legacy NEXACORE_* fallbacks kept
+    editing files (new SKYLYNX_* names first, legacy skylynx_* fallbacks kept
     for compatibility):
-      - SKYLYNX_API_USERNAME / NEXACORE_API_USERNAME
-      - SKYLYNX_API_PASSWORD / NEXACORE_API_PASSWORD
-      - SKYLYNX_API_ACCOUNT_ID / NEXACORE_API_ACCOUNT_ID
-      - SKYLYNX_API_TOKEN / NEXACORE_API_TOKEN (optional shortcut to skip login)
-      - SKYLYNX_API_TOKEN_EXPIRES_AT / NEXACORE_API_TOKEN_EXPIRES_AT
+      - SKYLYNX_API_USERNAME / skylynx_API_USERNAME
+      - SKYLYNX_API_PASSWORD / skylynx_API_PASSWORD
+      - SKYLYNX_API_ACCOUNT_ID / skylynx_API_ACCOUNT_ID
+      - SKYLYNX_API_TOKEN / skylynx_API_TOKEN (optional shortcut to skip login)
+      - SKYLYNX_API_TOKEN_EXPIRES_AT / skylynx_API_TOKEN_EXPIRES_AT
         (optional metadata when providing a token)
     """
 
     env_credentials = {
         "username": os.getenv("SKYLYNX_API_USERNAME")
-        or os.getenv("NEXACORE_API_USERNAME"),
+        or os.getenv("skylynx_API_USERNAME"),
         "password": os.getenv("SKYLYNX_API_PASSWORD")
-        or os.getenv("NEXACORE_API_PASSWORD"),
+        or os.getenv("skylynx_API_PASSWORD"),
         "account_id": os.getenv("SKYLYNX_API_ACCOUNT_ID")
-        or os.getenv("NEXACORE_API_ACCOUNT_ID"),
+        or os.getenv("skylynx_API_ACCOUNT_ID"),
         "access_token": os.getenv("SKYLYNX_API_TOKEN")
-        or os.getenv("NEXACORE_API_TOKEN"),
+        or os.getenv("skylynx_API_TOKEN"),
         "expires_at": os.getenv("SKYLYNX_API_TOKEN_EXPIRES_AT")
-        or os.getenv("NEXACORE_API_TOKEN_EXPIRES_AT"),
+        or os.getenv("skylynx_API_TOKEN_EXPIRES_AT"),
     }
 
     if any(env_credentials.values()):
@@ -384,7 +384,7 @@ def get_api_client() -> APIClient:
     """
     Helper used by the Qt UI:
 
-        from nexacore_erp.services.api_client import get_api_client
+        from skylynx_digital.services.api_client import get_api_client
 
         client = get_api_client()
         await client.login(...)
@@ -406,7 +406,7 @@ async def _demo() -> None:
     - (optionally) logs in and lists employees
 
     Run from project root:
-        python -m nexacore_erp.services.api_client
+        python -m skylynx_digital.services.api_client
     """
     client = APIClient.get()
 

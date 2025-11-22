@@ -1,4 +1,4 @@
-# nexacore_erp/ui/main_window.py
+# skylynx_digital/ui/main_window.py
 from PySide6.QtWidgets import (
     QMainWindow, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QSizePolicy, QDialog, QLineEdit, QTreeWidget, QTreeWidgetItem,

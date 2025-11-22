@@ -10,7 +10,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Parse CLI arguments and dispatch to the requested workflow."""
 
     parser = argparse.ArgumentParser(
-        prog="nexacore_erp",
+        prog="skylynx_digital",
         description=(
             "Run the Skylynx Digital ERP desktop application or one of its helper "
             "utilities."

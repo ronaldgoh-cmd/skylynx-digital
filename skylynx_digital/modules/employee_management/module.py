@@ -1,4 +1,4 @@
-# nexacore_erp/modules/employee_management/module.py
+# skylynx_digital/modules/employee_management/module.py
 from __future__ import annotations
 
 from PySide6.QtWidgets import QWidget

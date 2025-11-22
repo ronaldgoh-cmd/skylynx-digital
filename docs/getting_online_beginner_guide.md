@@ -37,8 +37,8 @@ shared backend.
 ## Part 1 — Open the project in PyCharm and prepare Python
 1. **Clone the code (if you have not yet):**
    ```bash
-   git clone https://github.com/<your-org>/skylynx-digital.git
-   cd skylynx-digital
+   git clone https://github.com/<your-org>/skylynx_digital.git
+   cd skylynx_digital
    ```
 2. **Open PyCharm** → **Open** → choose the `skylynx-digital` folder.
 3. **Create a virtual environment** (inside PyCharm):
@@ -63,7 +63,7 @@ shared backend.
    This installs FastAPI, SQLAlchemy, Alembic, and Cloud SQL connector support.
 7. **Run the desktop app locally (offline mode for now)**:
    ```bash
-   python -m nexacore_erp
+   python -m skylynx_digital
    ```
    This confirms PySide launches correctly before you connect it to the backend.
 
@@ -153,14 +153,14 @@ managed).
    ```
    Open http://127.0.0.1:8000/docs to see the interactive API docs.
 4. **Test the desktop client against the local API**:
-   - Open `nexacore_erp/config.json`.
+   - Open `skylynx-digital/config.json`.
    - Set "api_base_url": "http://127.0.0.1:8000".
-   - Run the client: `python -m nexacore_erp`.
+   - Run the client: `python -m skylynx-digital`.
    - Log in with a test user you create via the API (e.g., POST /auth/register
      if provided) or seed a test account directly in the database.
 
 ## Part 5 — Wire the desktop client to the backend
-1. **Use the API client helper** already in `nexacore_erp/services/api_client.py`.
+1. **Use the API client helper** already in `skylynx-digital/services/api_client.py`.
    Make sure `config.json` includes:
    ```json
    {
@@ -223,11 +223,11 @@ managed).
    block_cipher = None
 
    a = Analysis([
-       'nexacore_erp/__main__.py'
+       'skylynx_digital/__main__.py'
    ],
    pathex=['.'],
    binaries=[],
-   datas=[('nexacore_erp/config.json', 'nexacore_erp')],
+   datas=[('skylynx_digital/config.json', 'skylynx_digital')],
    hiddenimports=[],
    hookspath=[],
    hooksconfig={},
@@ -265,7 +265,7 @@ managed).
    The Windows installer will appear under `dist/SkylynxDigitalERP/`. Zip that
    folder or wrap it with an installer creator of your choice if needed.
 3. **Configure the client to point to Cloud Run**:
-   - Edit `nexacore_erp/config.json` before packaging to include your Cloud Run
+   - Edit `skylynx-digital/config.json` before packaging to include your Cloud Run
      URL and any default settings.
 
 ## Part 8 — Operating tips

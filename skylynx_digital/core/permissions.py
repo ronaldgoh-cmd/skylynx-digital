@@ -1,12 +1,12 @@
-# nexacore_erp/core/permissions.py
+# skylynx_digital/core/permissions.py
 from __future__ import annotations
 import re
 from sqlalchemy import func, or_
 from .database import SessionLocal
 
 # Models: User is in core, the rest are in account_management
-from nexacore_erp.core.models import User
-from nexacore_erp.modules.account_management.models import (
+from skylynx_digital.core.models import User
+from skylynx_digital.modules.account_management.models import (
     Role, Permission, RolePermission, UserRole, AccessRule
 )
 

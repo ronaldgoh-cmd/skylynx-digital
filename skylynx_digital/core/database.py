@@ -9,7 +9,7 @@ from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # ---------- paths ----------
-PKG_DIR = Path(__file__).resolve().parents[1]          # .../nexacore_erp
+PKG_DIR = Path(__file__).resolve().parents[1]          # .../skylynx_digital
 DATA_DIR = PKG_DIR / "database"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -24,7 +24,7 @@ def _sqlite_url(p: Path) -> str:
 Base = declarative_base()
 
 # ---------- MAIN framework DB (users, settings, modules) ----------
-MAIN_DB_PATH = DATA_DIR / "nexacore_main.db"
+MAIN_DB_PATH = DATA_DIR / "skylynx_main.db"
 MAIN_ENGINE = create_engine(
     _sqlite_url(MAIN_DB_PATH),
     connect_args={"check_same_thread": False},
@@ -52,7 +52,7 @@ def init_db() -> None:
 
 # ---------- Module databases (separate .db per module) ----------
 MODULE_DB_FILES = {
-    "employee_management": "nexacore_employeemanagement.db",
+    "employee_management": "skylynx_employeemanagement.db",
     # add future modules here as needed
 }
 
@@ -64,7 +64,7 @@ def _module_db_path(module_key: str) -> Path:
     filename = MODULE_DB_FILES.get(module_key)
     if not filename:
         safe = "".join(ch for ch in module_key if ch.isalnum()).lower()
-        filename = f"nexacore_{safe}.db"
+        filename = f"skylynx_{safe}.db"
         MODULE_DB_FILES[module_key] = filename
     return DATA_DIR / filename
 

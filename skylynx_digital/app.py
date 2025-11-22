@@ -1,4 +1,4 @@
-# nexacore_erp/app.py
+# skylynx_digital/app.py
 import sys
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
