@@ -1,28 +1,16 @@
-"""Database session management for the FastAPI backend."""
-from collections.abc import AsyncGenerator
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from .config import DATABASE_URL
 
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+engine = create_engine(DATABASE_URL, echo=False, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+Base = declarative_base()
 
-from .config import get_settings
+# Dependency for FastAPI routes
 
-settings = get_settings()
-connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite+") else {}
-engine = create_async_engine(settings.database_url, future=True, echo=False, connect_args=connect_args)
-AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
-
-
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """Provide an async SQLAlchemy session per request."""
-
-    async with AsyncSessionLocal() as session:
-        yield session
-
-# Optional alias so other modules can depend on `get_db`
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Alias for get_session(), used by some dependencies."""
-    async for session in get_session():
-        yield session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

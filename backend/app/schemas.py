@@ -1,96 +1,97 @@
-"""Pydantic schemas used across the backend API."""
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
+from typing import List, Optional
+from pydantic import BaseModel, EmailStr
 
-from pydantic import BaseModel, EmailStr, Field
+class ModuleBase(BaseModel):
+    code: str
+    name: str
 
+class ModuleOut(ModuleBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+class CompanyBase(BaseModel):
+    name: str
+
+class CompanyOut(CompanyBase):
+    id: int
+    is_active: bool
+    modules: List[ModuleOut] = []
+
+    class Config:
+        orm_mode = True
+
+class UserBase(BaseModel):
+    email: EmailStr
+
+class UserCreate(UserBase):
+    password: str
+    company_id: int
+
+class UserOut(UserBase):
+    id: int
+    company_id: int
+    role: str
+
+    class Config:
+        orm_mode = True
 
 class Token(BaseModel):
-    """JWT response payload."""
-
     access_token: str
     token_type: str = "bearer"
-    expires_at: datetime
+    company_id: int
+    modules: List[str]
 
-
-class TokenData(BaseModel):
-    """Information encoded into JWTs."""
-
-    username: str
-    account_id: str
-
-
-class UserCreate(BaseModel):
-    """Payload for user registration."""
-
-    username: str
+class LoginRequest(BaseModel):
+    email: EmailStr
     password: str
-    account_id: str
-    email: EmailStr | None = None
-    role: str | None = None
-
-
-class UserRead(BaseModel):
-    """Public representation of a user."""
-
-    id: int
-    username: str
-    account_id: str
-    email: EmailStr | None = Field(default=None)
-
-    class Config:
-        from_attributes = True
-
 
 class EmployeeBase(BaseModel):
-    """Shared properties for employee operations.
-
-    The desktop client currently does not send `code` when creating employees,
-    so we treat it as optional and let the backend derive one when missing.
-    """
-
-    code: str | None = None
-    full_name: str
-    email: EmailStr | None = None
-    contact_number: str | None = None
-    position: str | None = None
-    department: str | None = None
-    join_date: date | None = None
-    exit_date: date | None = None
-    basic_salary: float | None = None
-
-
+    name: str
+    position: str
+    salary: float
 
 class EmployeeCreate(EmployeeBase):
-    """Employee payload for creation."""
+    pass
 
-
-class EmployeeRead(EmployeeBase):
-    """Employee representation returned by the API."""
-
+class EmployeeOut(EmployeeBase):
     id: int
+    company_id: int
+    created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
+class SalaryBase(BaseModel):
+    employee_id: int
+    amount: float
+    period_start: date
+    period_end: date
 
-class SystemStatusRead(BaseModel):
-    """Serializer for the global maintenance flag."""
+class SalaryCreate(SalaryBase):
+    pass
 
-    maintenance_mode: bool
-    message: str
+class SalaryOut(SalaryBase):
+    id: int
+    company_id: int
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
+class LeaveBase(BaseModel):
+    employee_id: int
+    start_date: date
+    end_date: date
+    status: str = "pending"
 
-class SystemStatusUpdate(BaseModel):
-    """Request payload to toggle maintenance mode."""
+class LeaveCreate(LeaveBase):
+    pass
 
-    maintenance_mode: bool
-    message: str | None = None
+class LeaveOut(LeaveBase):
+    id: int
+    company_id: int
 
-
-def compute_expiry(minutes: int) -> datetime:
-    """Return an absolute expiration timestamp for tokens."""
-
-    return datetime.utcnow() + timedelta(minutes=minutes)
+    class Config:
+        orm_mode = True

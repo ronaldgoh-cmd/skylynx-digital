@@ -1,32 +1,12 @@
-"""Application settings and configuration helpers."""
-from functools import lru_cache
 import os
-from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 load_dotenv()
 
-
-class Settings(BaseModel):
-    """Runtime configuration loaded from environment variables."""
-
-    database_url: str = Field(
-        default="sqlite+aiosqlite:///./skylynx.db", alias="DATABASE_URL"
-    )
-    secret_key: str = Field(default="change-me", alias="SECRET_KEY")
-    access_token_expires_minutes: int = Field(5_256_000, env="ACCESS_TOKEN_EXPIRES_MINUTES")
-
-    model_config = {
-        "populate_by_name": True,
-        "extra": "ignore",
-    }
-
-
-@lru_cache
-def get_settings() -> Settings:
-    """Return a cached Settings instance."""
-
-    return Settings(
-        database_url=os.getenv("DATABASE_URL", Settings.model_fields["database_url"].default),
-        secret_key=os.getenv("SECRET_KEY", Settings.model_fields["secret_key"].default),
-    )
+# Always replace placeholders when deploying
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg2://<DB_USER>:<DB_PASSWORD>@localhost:5432/<DB_NAME>"
+)
+SECRET_KEY = os.getenv("SECRET_KEY", "<CHANGE_ME_TO_RANDOM_STRING>")
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
