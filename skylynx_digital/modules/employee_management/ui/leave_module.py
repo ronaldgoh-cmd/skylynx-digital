@@ -1,4 +1,4 @@
-# leave_module.py — NexaCore ERP (Employee Management > Leave)
+# leave_module.py — Skylynx ERP (Employee Management > Leave)
 from __future__ import annotations
 
 from dataclasses import dataclass

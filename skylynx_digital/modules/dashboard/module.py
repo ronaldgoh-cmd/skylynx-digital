@@ -15,7 +15,7 @@ class Module:
             "name": "Dashboard",
             "submodules": [],
             "version": "0.1.0",
-            "author": "NexaCore Digital Solutions",
+            "author": "Skylynx Digital Solutions",
             "always_enabled": True,
             "always_visible": True,
             "weight": -1000,

@@ -1,4 +1,4 @@
-# nexacore_erp/ui/login_dialog.py
+# skylynx_digital/ui/login_dialog.py
 from __future__ import annotations
 
 import asyncio
@@ -10,14 +10,14 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QPixmap
 
-from nexacore_erp.services.api_client import get_api_client
+from ..services.api_client import get_api_client
 
 
 class LoginDialog(QDialog):
     def __init__(self, parent: QWidget | None = None, logo_pixmap: QPixmap | None = None):
         super().__init__(parent)
-        self.setWindowTitle("NexaCore — Sign in")
-        self.settings = QSettings("NexaCore", "ERP")
+        self.setWindowTitle("Skylynx — Sign in")
+        self.settings = QSettings("Skylynx", "ERP")
 
         root = QVBoxLayout(self)
 

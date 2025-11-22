@@ -11,17 +11,17 @@ from PySide6.QtWidgets import (
     QAbstractItemView, QToolButton, QStyle, QCheckBox, QHeaderView
 )
 
-from nexacore_erp.core.database import SessionLocal
-from nexacore_erp.core.models import User
-from nexacore_erp.modules.account_management.models import Role, UserRole
+from skylynx_digital.core.database import SessionLocal
+from skylynx_digital.core.models import User
+from skylynx_digital.modules.account_management.models import Role, UserRole
 
 try:
-    from nexacore_erp.core.auth import hash_password as _hash
+    from skylynx_digital.core.auth import hash_password as _hash
 except Exception:
     _hash = None
 
 # ---- reveal helpers
-def _key_dir() -> Path: return Path.home() / ".nexacore_erp"
+def _key_dir() -> Path: return Path.home() / ".skylynx_digital"
 def _key_path() -> Path: return _key_dir() / "secret.key"
 def _load_or_create_key() -> Optional[bytes]:
     try:

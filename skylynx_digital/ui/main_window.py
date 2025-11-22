@@ -1,4 +1,4 @@
-# nexacore_erp/ui/main_window.py
+# skylynx_digital/ui/main_window.py
 from PySide6.QtWidgets import (
     QMainWindow, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QSizePolicy, QDialog, QLineEdit, QTreeWidget, QTreeWidgetItem,
@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NexaCore ERP")
+        self.setWindowTitle("Skylynx ERP")
         self.resize(1366, 860)
 
         self.user = None
@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
         row1.setContentsMargins(0, 0, 0, 0)
         left_sp = QWidget(host); left_sp.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         right_sp = QWidget(host); right_sp.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.fixed_title = QLabel("NexaCore Digital Solutions", host)
+        self.fixed_title = QLabel("Skylynx Digital", host)
         self.fixed_title.setAlignment(Qt.AlignCenter)
         self.fixed_title.setStyleSheet("font-size: 18px; font-weight: 700;")
         row1.addWidget(left_sp); row1.addWidget(self.fixed_title); row1.addWidget(right_sp)
@@ -513,7 +513,7 @@ class MainWindow(QMainWindow):
 
         reply = QMessageBox.question(
             self,
-            "Exit NexaCore ERP",
+            "Exit Skylynx ERP",
             "Are you sure you want to exit the application?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,

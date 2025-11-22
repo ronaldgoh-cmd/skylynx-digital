@@ -1,6 +1,6 @@
-# NexaCore ERP Cloud Go-Live Playbook
+# Skylynx ERP Cloud Go-Live Playbook
 
-This playbook continues where the "NexaCore ERP Beginner Field Manual" left off.
+This playbook continues where the "Skylynx ERP Beginner Field Manual" left off.
 It walks you—click by click—through the remaining steps required to take your
 single-user desktop build online, serve multiple companies, and distribute a
 self-updating executable. Every task is written prescriptively so you can follow
@@ -19,10 +19,10 @@ it even if you have never shipped software before.
 ## 1. Confirm your cloud foundation (15 minutes)
 
 1. Open **https://console.cloud.google.com/** and make sure the project dropdown
-   shows the project you created earlier (for example `nexacore-online`).
+   shows the project you created earlier (for example `skylynx-online`).
 2. In a second browser tab, open **https://bitwarden.com** and unlock your vault.
    Keep it visible; you will save at least five new secrets during this playbook.
-3. On your laptop, reopen the repository folder (`nexacore-online`) in Visual
+3. On your laptop, reopen the repository folder (`skylynx-online`) in Visual
    Studio Code → `File → Open Folder…`. Press ``Ctrl+` `` to open the integrated
    terminal. Activate the virtual environment: `source .venv1/bin/activate`
    (macOS/Linux) or `.\.venv1\Scripts\Activate` (Windows PowerShell).
@@ -56,7 +56,7 @@ the desktop client to listen for events.
    2. If you deploy inside Docker Compose, expose port `8000` and keep HTTPS open
       on the VM so secure WebSocket (`wss://`) connections succeed.
 
-3. **Update the desktop client** (inside `nexacore_erp/`)
+3. **Update the desktop client** (inside `skylynx_erp/`)
    1. Locate the module responsible for API calls (search for `requests.post`).
    2. Install `websocket-client` into the desktop app environment.
    3. When the desktop UI loads, open a background thread that connects to
@@ -72,13 +72,13 @@ the desktop client to listen for events.
    2. Run two instances of the desktop client on your laptop.
    3. Add a sample employee from instance A and watch instance B update without
       pressing refresh. If nothing happens, watch the backend logs for errors.
-   4. Commit the WebSocket code (`git add backend/app/* nexacore_erp/*`).
+   4. Commit the WebSocket code (`git add backend/app/* skylynx_erp/*`).
 
 5. **Open port 443 on the VM for WebSockets**
    1. Go to `☰ → VPC network → Firewall`. Verify the existing `allow-https`
-      rule targets the network tag `nexacore-app` (you configured that earlier).
+      rule targets the network tag `skylynx-app` (you configured that earlier).
    2. Open `Compute Engine → VM instances`, click your VM name, and confirm the
-      **Network tags** section includes `nexacore-app`. This ensures WebSocket
+      **Network tags** section includes `skylynx-app`. This ensures WebSocket
       traffic over HTTPS reaches the backend container.
 
 ---
@@ -105,7 +105,7 @@ flag stored in the database, and a Cloud Storage bucket for release artifacts.
       wait. Close the app after displaying the message.
 
 3. **Prepare Dockerized releases**
-   1. Build the backend image locally: `docker build -t us-central1-docker.pkg.dev/<PROJECT_ID>/nexacore/backend:v1 .`
+   1. Build the backend image locally: `docker build -t us-central1-docker.pkg.dev/<PROJECT_ID>/skylynx/backend:v1 .`
    2. Push it to Artifact Registry: `docker push ...`.
    3. SSH into the VM and pull the new tag: `docker pull ...:v1`.
    4. When ready to update, call `PUT /system/maintenance` with
@@ -147,31 +147,31 @@ flag stored in the database, and a Cloud Storage bucket for release artifacts.
 2. **Create a spec file**
    1. In the repo root, run:
       ```bash
-      pyinstaller nexacore_erp/__main__.py \
-        --name NexaCoreERP \
+      pyinstaller skylynx_erp/__main__.py \
+        --name SkylynxERP \
         --onefile \
         --noconsole \
         --icon docs/assets/app.ico \
         --hidden-import=asyncio
       ```
-   2. PyInstaller generates a `build/` folder and `dist/NexaCoreERP.exe`.
+   2. PyInstaller generates a `build/` folder and `dist/SkylynxERP.exe`.
    3. Test the exe on the same machine. Double-click it; confirm it reaches the
       backend you started on the VM (`Settings → API URL → https://<your-domain>`).
 
 3. **Sign the executable (optional but recommended)**
    1. Buy a code-signing certificate (e.g., Sectigo). Store the `.pfx` in
       Bitwarden.
-   2. Use `signtool sign /f cert.pfx /tr http://timestamp.sectigo.com /td sha256 dist/NexaCoreERP.exe`.
+   2. Use `signtool sign /f cert.pfx /tr http://timestamp.sectigo.com /td sha256 dist/SkylynxERP.exe`.
 
 4. **Distribute**
    1. Create a folder in Google Cloud Storage: `☰ → Cloud Storage → Buckets → Create`.
-   2. Name it `nexacore-downloads` and make it **Uniform access control**.
-   3. Upload `dist/NexaCoreERP.exe`. Click the file → **Copy URL**. Share the URL
+   2. Name it `skylynx-downloads` and make it **Uniform access control**.
+   3. Upload `dist/SkylynxERP.exe`. Click the file → **Copy URL**. Share the URL
       with customers.
 
 5. **Auto-updates**
    1. Inside the desktop app, add a startup check: call
-      `https://nexacore-downloads.storage.googleapis.com/latest.json`.
+      `https://skylynx-downloads.storage.googleapis.com/latest.json`.
    2. Maintain this JSON file yourself with keys `version`, `mandatory`, `url`.
    3. When you publish a new exe, update `latest.json`. If the user’s version is
       older and `mandatory` is true, download the new installer and relaunch.
@@ -197,7 +197,7 @@ flag stored in the database, and a Cloud Storage bucket for release artifacts.
 
 3. **Separate file storage per tenant**
    1. If you store documents, create Cloud Storage folders like
-      `gs://nexacore-docs/<tenant-id>/...`.
+      `gs://skylynx-docs/<tenant-id>/...`.
    2. Use signed URLs so only authenticated clients can upload/download files.
 
 4. **Tenant onboarding checklist**
@@ -224,7 +224,7 @@ flag stored in the database, and a Cloud Storage bucket for release artifacts.
    2. Install Prometheus Node Exporter on the VM if you want CPU/memory charts.
 
 2. **Backups**
-   1. In Cloud SQL → `nexacore-postgres → Backups`, enable automated backups.
+   1. In Cloud SQL → `skylynx-postgres → Backups`, enable automated backups.
    2. Download a weekly logical backup with `pg_dump` and store it in Cloud
       Storage.
 
@@ -235,7 +235,7 @@ flag stored in the database, and a Cloud Storage bucket for release artifacts.
 
 4. **Security sweep**
    1. Rotate all service account keys every 90 days. Delete the old key in
-      `IAM & Admin → Service Accounts → nexacore-backend-sa → Keys`.
+      `IAM & Admin → Service Accounts → skylynx-backend-sa → Keys`.
    2. Run `pip-audit` in the repo monthly to catch vulnerable dependencies.
 
 ---

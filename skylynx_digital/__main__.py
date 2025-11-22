@@ -1,4 +1,4 @@
-"""Module executed when ``python -m nexacore_erp`` is invoked."""
+"""Module executed when ``python -m skylynx_digital`` is invoked."""
 
 from __future__ import annotations
 

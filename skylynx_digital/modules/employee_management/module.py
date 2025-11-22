@@ -1,4 +1,4 @@
-# nexacore_erp/modules/employee_management/module.py
+# skylynx_digital/modules/employee_management/module.py
 from __future__ import annotations
 
 from PySide6.QtWidgets import QWidget
@@ -24,7 +24,7 @@ class Module:
             "name": "Employee Management",
             "submodules": ["Leave Management", "Salary Management"],
             "version": "0.1.0",
-            "author": "NexaCore Digital Solutions",
+            "author": "Skylynx Digital Solutions",
             "tab_manifest": {
                 "__module__": [
                     "Employee List",
