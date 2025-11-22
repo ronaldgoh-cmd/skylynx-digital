@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from .config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY
-from .dependencies import get_current_user, get_db_session
+from .dependencies import get_current_user
 
 ALGORITHM = "HS256"
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -29,7 +29,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 __all__ = [
     "create_access_token",
     "get_current_user",
-    "get_db_session",
     "hash_password",
     "verify_password",
 ]

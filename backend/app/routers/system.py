@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..dependencies import get_current_user, get_db_session, require_admin
+from ..database import get_db
+from ..dependencies import get_current_user, require_admin
 from ..models import SystemStatus, User
 from ..schemas import SystemStatusRead, SystemStatusUpdate
 
@@ -11,7 +12,7 @@ router = APIRouter(prefix="/system", tags=["system"])
 
 
 @router.get("/status", response_model=SystemStatusRead)
-def get_status(session: Session = Depends(get_db_session)) -> SystemStatus:
+def get_status(session: Session = Depends(get_db)) -> SystemStatus:
     """Return the current maintenance toggle."""
 
     result = session.execute(select(SystemStatus).limit(1))
@@ -25,7 +26,7 @@ def get_status(session: Session = Depends(get_db_session)) -> SystemStatus:
 def update_maintenance(
     payload: SystemStatusUpdate,
     current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_db_session),
+    session: Session = Depends(get_db),
 ) -> SystemStatus:
     """Enable or disable maintenance mode (admin only)."""
 
