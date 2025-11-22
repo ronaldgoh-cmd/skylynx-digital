@@ -1,0 +1,33 @@
+{
+  "name": "Employee Management",
+  "version": "0.2.0",
+  "submodules": [
+    "Leave Management",
+    "Salary Management"
+  ],
+  "tab_manifest": {
+    "__module__": [
+      "Employee List",
+      "Holidays",
+      "Employee Settings"
+    ],
+    "Leave Management": [
+      "Summary",
+      "Application",
+      "All Details",
+      "Adjustments",
+      "Calendar",
+      "User Application History"
+    ],
+    "Salary Management": [
+      "Summary",
+      "Salary Review",
+      "Salary Vouchers",
+      "Settings"
+    ]
+  },
+  "requires": [
+    "core>=0.1.0"
+  ],
+  "description": "Employees DB with Holidays, Settings, Leave and Salary submodules (skeleton)."
+}
