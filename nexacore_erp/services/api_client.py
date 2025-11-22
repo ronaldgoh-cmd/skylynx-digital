@@ -1,5 +1,5 @@
 """
-HTTP API client for talking to the NexaCore backend.
+HTTP API client for talking to the Skylynx Digital backend.
 
 Usage pattern (later you will call this from your Qt code):
 
@@ -36,11 +36,17 @@ def _load_base_url() -> str:
     Determine the backend base URL.
 
     Priority:
-    1. Environment variable NEXACORE_API_BASE_URL
-    2. nexacore_erp/config.json -> {"api_base_url": "..."}
-    3. Default: http://127.0.0.1:8000
+    1. Environment variable SKYLYNX_API_BASE_URL (preferred)
+    2. Environment variable NEXACORE_API_BASE_URL or legacy NEXACORE_API_BASE
+       (kept for backward compatibility)
+    3. nexacore_erp/config.json -> {"api_base_url": "..."}
+    4. Default: http://127.0.0.1:8000
     """
-    env_url = os.getenv("NEXACORE_API_BASE_URL")
+    env_url = (
+        os.getenv("SKYLYNX_API_BASE_URL")
+        or os.getenv("NEXACORE_API_BASE_URL")
+        or os.getenv("NEXACORE_API_BASE")
+    )
     if env_url:
         return env_url.rstrip("/")
 
@@ -66,20 +72,27 @@ def _load_default_credentials() -> Dict[str, Optional[str]]:
     Load default credentials from environment or config.json.
 
     Environment variables win over config.json so you can override without
-    editing files:
-      - NEXACORE_API_USERNAME
-      - NEXACORE_API_PASSWORD
-      - NEXACORE_API_ACCOUNT_ID
-      - NEXACORE_API_TOKEN (optional shortcut to skip login)
-      - NEXACORE_API_TOKEN_EXPIRES_AT (optional metadata when providing a token)
+    editing files (new SKYLYNX_* names first, legacy NEXACORE_* fallbacks kept
+    for compatibility):
+      - SKYLYNX_API_USERNAME / NEXACORE_API_USERNAME
+      - SKYLYNX_API_PASSWORD / NEXACORE_API_PASSWORD
+      - SKYLYNX_API_ACCOUNT_ID / NEXACORE_API_ACCOUNT_ID
+      - SKYLYNX_API_TOKEN / NEXACORE_API_TOKEN (optional shortcut to skip login)
+      - SKYLYNX_API_TOKEN_EXPIRES_AT / NEXACORE_API_TOKEN_EXPIRES_AT
+        (optional metadata when providing a token)
     """
 
     env_credentials = {
-        "username": os.getenv("NEXACORE_API_USERNAME"),
-        "password": os.getenv("NEXACORE_API_PASSWORD"),
-        "account_id": os.getenv("NEXACORE_API_ACCOUNT_ID"),
-        "access_token": os.getenv("NEXACORE_API_TOKEN"),
-        "expires_at": os.getenv("NEXACORE_API_TOKEN_EXPIRES_AT"),
+        "username": os.getenv("SKYLYNX_API_USERNAME")
+        or os.getenv("NEXACORE_API_USERNAME"),
+        "password": os.getenv("SKYLYNX_API_PASSWORD")
+        or os.getenv("NEXACORE_API_PASSWORD"),
+        "account_id": os.getenv("SKYLYNX_API_ACCOUNT_ID")
+        or os.getenv("NEXACORE_API_ACCOUNT_ID"),
+        "access_token": os.getenv("SKYLYNX_API_TOKEN")
+        or os.getenv("NEXACORE_API_TOKEN"),
+        "expires_at": os.getenv("SKYLYNX_API_TOKEN_EXPIRES_AT")
+        or os.getenv("NEXACORE_API_TOKEN_EXPIRES_AT"),
     }
 
     if any(env_credentials.values()):
@@ -138,7 +151,7 @@ class TokenInfo:
 
 class APIClient:
     """
-    Reusable HTTP client for the NexaCore backend.
+    Reusable HTTP client for the Skylynx Digital backend.
 
     Use APIClient.get() to obtain a singleton instance.
     """

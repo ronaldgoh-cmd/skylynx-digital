@@ -16,12 +16,16 @@ def _get_base() -> str:
     Base URL for the backend.
 
     Priority (matches services.api_client):
-      1) NEXACORE_API_BASE_URL env var
-      2) legacy NEXACORE_API_BASE env var
+      1) SKYLYNX_API_BASE_URL env var
+      2) legacy NEXACORE_API_BASE_URL or NEXACORE_API_BASE env var
       3) nexacore_erp/config.json -> {"api_base_url": "..."}
       4) fallback to http://127.0.0.1:8000
     """
-    env_url = os.getenv("NEXACORE_API_BASE_URL") or os.getenv("NEXACORE_API_BASE")
+    env_url = (
+        os.getenv("SKYLYNX_API_BASE_URL")
+        or os.getenv("NEXACORE_API_BASE_URL")
+        or os.getenv("NEXACORE_API_BASE")
+    )
     if env_url:
         return env_url.rstrip("/")
 
@@ -46,10 +50,11 @@ def _get_token() -> Optional[str]:
     """
     Access token for Authorization header.
 
-    Read from NEXACORE_API_TOKEN (or config.json: api_access_token) and used as:
+    Read from SKYLYNX_API_TOKEN (preferred) or NEXACORE_API_TOKEN (legacy) or
+    config.json: api_access_token and used as:
       Authorization: Bearer <token>
     """
-    token = os.getenv("NEXACORE_API_TOKEN")
+    token = os.getenv("SKYLYNX_API_TOKEN") or os.getenv("NEXACORE_API_TOKEN")
     if token:
         return token
 
@@ -77,9 +82,9 @@ def _headers() -> Dict[str, str]:
         headers["Authorization"] = f"Bearer {token}"
     else:
         raise EmployeeAPIError(
-            "No API token configured. Set NEXACORE_API_TOKEN or populate "
-            "api_access_token/api_username/api_password/api_account_id in "
-            "nexacore_erp/config.json so we can authenticate."
+            "No API token configured. Set SKYLYNX_API_TOKEN (or NEXACORE_API_TOKEN) "
+            "or populate api_access_token/api_username/api_password/api_account_id "
+            "in nexacore_erp/config.json so we can authenticate."
         )
     return headers
 
@@ -108,7 +113,8 @@ def _request(method: str, path: str, **kwargs) -> requests.Response:
         raise EmployeeAPIError(
             f"401 Unauthorized calling {url}.\n\n"
             "The backend rejected our credentials.\n"
-            "- Make sure NEXACORE_API_TOKEN is set to the 'access_token' "
+            "- Make sure SKYLYNX_API_TOKEN (or NEXACORE_API_TOKEN) is set to the "
+            "'access_token' "
             "you got from /auth/login in Swagger (WITHOUT the word 'Bearer').\n"
             "- Also confirm that the token hasn't expired and that the user "
             "has permission to access /employees/."

@@ -11,7 +11,7 @@ class Settings(BaseModel):
     """Runtime configuration loaded from environment variables."""
 
     database_url: str = Field(
-        default="sqlite+aiosqlite:///./nexacore.db", alias="DATABASE_URL"
+        default="sqlite+aiosqlite:///./skylynx.db", alias="DATABASE_URL"
     )
     secret_key: str = Field(default="change-me", alias="SECRET_KEY")
     access_token_expires_minutes: int = Field(5_256_000, env="ACCESS_TOKEN_EXPIRES_MINUTES")

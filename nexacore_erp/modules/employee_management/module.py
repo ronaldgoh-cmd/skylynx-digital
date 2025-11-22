@@ -24,7 +24,7 @@ class Module:
             "name": "Employee Management",
             "submodules": ["Leave Management", "Salary Management"],
             "version": "0.1.0",
-            "author": "NexaCore Digital Solutions",
+            "author": "Skylynx Digital",
             "tab_manifest": {
                 "__module__": [
                     "Employee List",

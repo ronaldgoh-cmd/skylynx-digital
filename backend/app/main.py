@@ -12,7 +12,7 @@ from .routers.employees import router as employees_router
 from .routers.system import router as system_router
 from .websocket_manager import ws_manager
 
-app = FastAPI(title="NexaCore ERP Backend", version="0.1.0")
+app = FastAPI(title="Skylynx Digital ERP Backend", version="0.1.0")
 app.include_router(auth_router)
 app.include_router(employees_router)
 app.include_router(system_router)

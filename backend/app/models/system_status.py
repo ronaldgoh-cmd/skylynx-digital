@@ -14,5 +14,5 @@ class SystemStatus(Base):
     maintenance_mode: Mapped[bool] = mapped_column(Boolean, default=False)
     message: Mapped[str] = mapped_column(
         String,
-        default="NexaCore ERP is updating. Please try again shortly.",
+        default="Skylynx Digital ERP is updating. Please try again shortly.",
     )

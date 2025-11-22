@@ -1,4 +1,4 @@
-"""Command-line entry point for the NexaCore ERP package."""
+"""Command-line entry point for the Skylynx Digital ERP package."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="nexacore_erp",
         description=(
-            "Run the NexaCore ERP desktop application or one of its helper "
+            "Run the Skylynx Digital ERP desktop application or one of its helper "
             "utilities."
         ),
     )

@@ -16,8 +16,8 @@ from nexacore_erp.services.api_client import get_api_client
 class LoginDialog(QDialog):
     def __init__(self, parent: QWidget | None = None, logo_pixmap: QPixmap | None = None):
         super().__init__(parent)
-        self.setWindowTitle("NexaCore — Sign in")
-        self.settings = QSettings("NexaCore", "ERP")
+        self.setWindowTitle("Skylynx Digital — Sign in")
+        self.settings = QSettings("Skylynx Digital", "ERP")
 
         root = QVBoxLayout(self)
 

@@ -1,5 +1,5 @@
 """
-Employee service that talks to the NexaCore backend via HTTP,
+Employee service that talks to the Skylynx Digital backend via HTTP,
 instead of using the local SQLite database.
 
 Later, your Qt UI code will import and call these functions instead

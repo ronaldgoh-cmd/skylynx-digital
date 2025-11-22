@@ -1,4 +1,4 @@
-# NexaCore Digital Solutions — Modular ERP Base Framework
+# Skylynx Digital — Modular ERP Base Framework
 
 ## Getting Started
 
@@ -16,4 +16,4 @@ installed as a package.
 
 ## Documentation
 
-* [Beginner Guide to Going Online](docs/getting_online_beginner_guide.md)
+* [Skylynx Digital Cloud Beginner Guide](docs/getting_online_beginner_guide.md)

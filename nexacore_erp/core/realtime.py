@@ -48,7 +48,7 @@ class EmployeeRealtimeClient(QObject):
         if not token:
             raise RuntimeError(
                 "No API access token configured for WebSocket. "
-                "Set it in config.json or NEXACORE_API_TOKEN."
+                "Set it in config.json or SKYLYNX_API_TOKEN (legacy NEXACORE_API_TOKEN is still read)."
             )
 
         base = _load_base_url()
