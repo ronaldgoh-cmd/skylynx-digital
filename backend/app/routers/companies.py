@@ -1,15 +1,18 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from .. import schemas, models
-from ..database import get_db
-from ..deps import get_current_user
+
+from .. import models, schemas
+from ..dependencies import get_current_user, get_db_session
 from ..crud import companies
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
 
 @router.get("/me", response_model=schemas.CompanyOut)
-def my_company(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+def my_company(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+):
     company = db.query(models.Company).filter(models.Company.id == current_user.company_id).first()
     if not company:
         return None
