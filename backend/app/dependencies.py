@@ -1,42 +1,44 @@
 """Reusable FastAPI dependencies."""
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
+from collections.abc import Generator
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
-import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 
-from .config import get_settings
-from .database import get_session
+from .config import SECRET_KEY
+from .database import get_db
 from .models import User
-from .schemas import TokenData
 
-# Load settings once
-settings = get_settings()
-
-# Use simple Bearer auth instead of OAuth2 password flow
+ALGORITHM = "HS256"
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
-async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency that yields an AsyncSession."""
-    async for session in get_session():
-        yield session
+def get_db_session() -> Generator[Session, None, None]:
+    """Dependency that yields a synchronous database session."""
+    yield from get_db()
 
 
-async def get_current_user(
+def decode_access_token(token: str) -> Dict[str, Any]:
+    """Decode a JWT access token and return its payload."""
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        ) from exc
+
+
+def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    session: AsyncSession = Depends(get_db_session),
+    session: Session = Depends(get_db_session),
 ) -> User:
-    """
-    Return the authenticated user from a JWT access token
-    taken from the Authorization: Bearer <token> header.
-    """
+    """Return the authenticated user from the Authorization header."""
 
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(
@@ -44,23 +46,26 @@ async def get_current_user(
             detail="Not authenticated",
         )
 
-    token = credentials.credentials
+    token_payload = decode_access_token(credentials.credentials)
+    user_id = token_payload.get("sub")
+    tenant_id: Optional[str] = token_payload.get("account_id") or token_payload.get(
+        "company_id"
+    )
 
-    try:
-        token_data = decode_access_token(token)
-    except jwt.PyJWTError as exc:
+    if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
-        ) from exc
-
-    result = await session.execute(
-        select(User).where(
-            User.username == token_data.username,
-            User.account_id == token_data.account_id,
         )
-    )
-    user = result.scalar_one_or_none()
+
+    query = session.query(User).filter(User.id == int(user_id))
+    if tenant_id is not None:
+        if hasattr(User, "account_id"):
+            query = query.filter(User.account_id == tenant_id)
+        elif hasattr(User, "company_id"):
+            query = query.filter(User.company_id == tenant_id)
+
+    user = query.first()
     if user is None or not getattr(user, "is_active", True):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -72,7 +77,8 @@ async def get_current_user(
 
 def require_same_tenant(user: User, account_id: str) -> None:
     """Raise if the requested tenant does not match the authenticated user."""
-    if user.account_id != account_id:
+    user_account = getattr(user, "account_id", None) or getattr(user, "company_id", None)
+    if user_account != account_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Tenant mismatch",
@@ -89,17 +95,6 @@ def require_admin(user: User) -> None:
         )
 
 
-def decode_access_token(token: str) -> TokenData:
-    """Decode a JWT access token and return its payload."""
-
-    payload: Dict[str, Any] = jwt.decode(
-        token,
-        settings.secret_key,
-        algorithms=["HS256"],
-    )
-    return TokenData(**payload)
-
-
 def token_payload(user: User) -> dict[str, Any]:
     """
     Generate the JWT payload for a given user.
@@ -107,7 +102,8 @@ def token_payload(user: User) -> dict[str, Any]:
     auth.login() will add "exp" on top of this.
     """
     return {
-        "username": user.username,
-        "account_id": user.account_id,
+        "username": getattr(user, "username", ""),
+        "account_id": getattr(user, "account_id", None)
+        or getattr(user, "company_id", None),
         "iat": int(datetime.utcnow().timestamp()),
     }

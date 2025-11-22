@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from .. import schemas, models
+
+from .. import models, schemas
 from ..database import get_db
-from ..deps import get_current_user
+from ..dependencies import get_current_user
 from ..crud import salaries
 
 router = APIRouter(prefix="/salaries", tags=["salaries"])
