@@ -1,5 +1,6 @@
-# File: backend/app/config.py (NEW FILE)
-from pydantic import BaseSettings, AnyUrl
+from pydantic import AnyUrl
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     database_url: AnyUrl
@@ -7,11 +8,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
 
-settings = Settings(
-    _env_file=".env",
-    _env_file_encoding="utf-8",
-)
+
+settings = Settings()
