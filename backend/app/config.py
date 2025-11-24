@@ -4,7 +4,9 @@ from urllib.parse import unquote
 
 
 class Settings(BaseSettings):
-    database_url: AnyUrl
+    # Default to a local SQLite database so development can proceed even if
+    # environment variables are missing or contain placeholder template values.
+    database_url: str = "sqlite:///./skylynx_local.db"
     jwt_secret: str
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
