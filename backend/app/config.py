@@ -6,7 +6,9 @@ from urllib.parse import unquote
 
 
 class Settings(BaseSettings):
-    database_url: str
+    # Default to a local SQLite database so development can proceed even if
+    # environment variables are missing or contain placeholder template values.
+    database_url: str = "sqlite:///./skylynx_local.db"
     jwt_secret: str
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
@@ -14,6 +16,8 @@ class Settings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def ensure_real_database_url(cls, value: str) -> str:
+        """Warn on placeholder credentials and return a safe local fallback."""
+
         decoded_url = unquote(value)
 
         placeholder_markers = [
@@ -29,6 +33,12 @@ class Settings(BaseSettings):
                 fallback_url,
             )
             return fallback_url
+
+        if not decoded_url:
+            logging.warning(
+                "DATABASE_URL not provided; using local SQLite at %s.",
+                value,
+            )
 
         return value
 
