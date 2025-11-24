@@ -1,13 +1,36 @@
+# backend/app/database.py
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 from .config import settings
 
-# SQLAlchemy's engine requires a string URL. Pydantic's AnyUrl returns a
-# specialized object, so we cast to str to avoid type errors during startup.
-engine = create_engine(str(settings.database_url), pool_pre_ping=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    """Base class for all ORM models."""
+    pass
+
+
+# Extra options for SQLite
+connect_args = {}
+if settings.database_url.startswith("sqlite"):
+    # Needed for SQLite when used in multi-threaded apps (like FastAPI + Uvicorn)
+    connect_args["check_same_thread"] = False
+
+# Create the SQLAlchemy engine
+engine = create_engine(
+    settings.database_url,
+    echo=False,
+    future=True,
+    connect_args=connect_args,
+)
+
+# Session factory
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
 
 
 # Dependency for FastAPI routes
