@@ -1,6 +1,4 @@
-import logging
-
-from pydantic import field_validator
+from pydantic import AnyUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from urllib.parse import unquote
 
@@ -15,10 +13,9 @@ class Settings(BaseSettings):
 
     @field_validator("database_url")
     @classmethod
-    def ensure_real_database_url(cls, value: str) -> str:
-        """Warn on placeholder credentials and return a safe local fallback."""
-
-        decoded_url = unquote(value)
+    def ensure_real_database_url(cls, value: AnyUrl) -> AnyUrl:
+        url_str = str(value)
+        decoded_url = unquote(url_str)
 
         placeholder_markers = [
             "<YOUR_DB_USER_HERE>",
@@ -27,17 +24,9 @@ class Settings(BaseSettings):
         ]
 
         if any(marker in decoded_url for marker in placeholder_markers):
-            fallback_url = "sqlite:///./skylynx_local.db"
-            logging.warning(
-                "Detected placeholder database credentials in .env; falling back to local SQLite at %s.",
-                fallback_url,
-            )
-            return fallback_url
-
-        if not decoded_url:
-            logging.warning(
-                "DATABASE_URL not provided; using local SQLite at %s.",
-                value,
+            raise ValueError(
+                "Please replace the placeholder database credentials in .env with real values "
+                "(e.g., DB user, password, and database name)."
             )
 
         return value
