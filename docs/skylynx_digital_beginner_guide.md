@@ -719,47 +719,65 @@ class EmployeeWindow(QtWidgets.QWidget):
 
 ---
 # PART E: Deployment on Google Cloud (Cloud Run + Cloud SQL)
-We pick one simple path: Dockerized FastAPI → Cloud Run (serverless) → Cloud SQL (PostgreSQL).
+This path is intentionally slow and hand-holding: Dockerized FastAPI → Cloud Run (serverless) → Cloud SQL (PostgreSQL). Follow each step in order to avoid missing a toggle.
 
-### E1. Create Google Cloud project & enable billing
-1. Go to https://console.cloud.google.com/
-2. If prompted, sign in.
-3. Click the **Project dropdown** (top bar) → **New Project**.
-4. Enter Project name: `skylynx-digital` (or any name) → Click **Create**.
-5. After creation, ensure **Billing** is enabled (Console → **Billing** → link a billing account).
+### E1. Before you start (5-minute prep)
+1. Open a Google Chrome/Edge tab at https://console.cloud.google.com/ and sign in with the Google account that owns billing rights.
+2. Open a second tab for these docs so you can switch back and forth while clicking things.
+3. Keep a notepad for copy/pasting the **Project ID**, **Region**, and **Instance connection name** as you create them (these are needed later when deploying).
 
-### E2. Enable required APIs
-1. In Cloud Console, click **Navigation menu (☰)** → **APIs & Services** → **Enable APIs and Services**.
-2. Enable these:
+### E2. Create a Google Cloud project and attach billing
+1. In the Cloud Console, click the **Project dropdown** in the top bar (next to the Google Cloud logo).
+2. Click **New Project**.
+3. Enter **Project name**: `skylynx-digital` (or your company name). Leave **Location** as the default organization if unsure.
+4. Click **Create**. Wait for the small notification that the project was created.
+5. Immediately click the **Project dropdown** again and select the new project to make sure it is active.
+6. Attach billing: **Navigation menu (☰)** → **Billing** → if prompted, click **Link a billing account**, choose your billing account, then click **Set account**. This prevents API errors later.
+
+### E3. Enable required APIs (prevents “permission denied” errors later)
+1. Confirm you are still in the new project (Project name shows in the top bar).
+2. Go to **Navigation menu (☰)** → **APIs & Services** → **Enabled APIs & services** → **+ ENABLE APIS AND SERVICES**.
+3. Search and enable each of these one by one (click the result → **Enable**):
    - **Cloud Run Admin API**
    - **Cloud SQL Admin API**
-   - **Secret Manager API** (optional but recommended)
+   - **Secret Manager API** (recommended for storing passwords/keys)
 
-### E3. Install Google Cloud SDK locally
-1. Download from https://cloud.google.com/sdk/docs/install
-2. Install following the wizard.
-3. In PyCharm Terminal (or system terminal), run:
+### E4. Install and initialize the Google Cloud SDK on your PC
+1. Download from https://cloud.google.com/sdk/docs/install.
+2. Run the installer and accept defaults. When it finishes, open a **new terminal** (PyCharm Terminal is fine) so `gcloud` is on PATH.
+3. Initialize and set defaults:
    ```bash
    gcloud init
+   gcloud auth login           # opens a browser; pick the same account as above
+   gcloud config set project <YOUR_PROJECT_ID>
+   gcloud config set compute/region <YOUR_REGION>   # e.g., us-central1
+   gcloud config set compute/zone <YOUR_ZONE>       # e.g., us-central1-a
    ```
-   - Choose your Google account.
-   - Select the project you created.
+   Replace placeholders with the Project ID shown in the console (not the display name) and a nearby region/zone.
 
-### E4. Create Cloud SQL (PostgreSQL) instance
-1. Console: **Navigation menu (☰)** → **SQL**.
-2. Click **Create instance** → choose **PostgreSQL**.
-3. Set Instance ID (e.g., `skylynx-postgres`), choose region/zone (keep default for simplicity).
-4. Set a strong password when asked (remember it as `<YOUR_DB_PASSWORD_HERE>`).
-5. Click **Create** and wait for provisioning.
-6. After creation, click the instance → **Databases** tab → **Create database** → name it `skylynx`.
-7. Note the connection info: **Instance connection name** (format: `project:region:instance`). Use it later.
+### E5. Create Cloud SQL (PostgreSQL) instance and database
+1. In the Cloud Console: **Navigation menu (☰)** → **SQL** → **Create instance**.
+2. Choose **PostgreSQL**.
+3. Fill the form:
+   - **Instance ID**: `skylynx-postgres` (recommended; lowercase, numbers, hyphens only).
+   - **Password**: create a strong password and save it as `<YOUR_DB_PASSWORD_HERE>`.
+   - **Region/Zone**: keep defaults unless you have a specific need.
+   - Leave machine size/storage at the smallest defaults for testing.
+4. Click **Create** and wait until the status turns **RUNNING**.
+5. Inside the instance page, go to **Users** → **Add user account**:
+   - **User name**: `skylynx-app`
+   - **Password**: reuse `<YOUR_DB_PASSWORD_HERE>` or create a new one and note it.
+6. Still in the instance, go to **Databases** → **Create database**:
+   - **Database name**: `skylynx` (recommended).
+7. Copy the **Instance connection name** from the Overview tab (format: `project:region:instance`). You will paste this into the `.env` and Cloud Run command.
 
-### E5. Store secrets safely
-- Use placeholders in code (`<YOUR_DB_USER_HERE>`, `<YOUR_DB_PASSWORD_HERE>`, `<YOUR_CLOUD_SQL_CONNECTION_NAME>`).
-- Prefer **Secret Manager** for production: Console → **Security** → **Secret Manager** → **Create Secret**.
-- Store DB password and JWT secret there; reference them as environment variables in Cloud Run.
+### E6. Store secrets safely (recommended even for tests)
+- Keep placeholders in code (`<YOUR_DB_USER_HERE>`, `<YOUR_DB_PASSWORD_HERE>`, `<YOUR_CLOUD_SQL_CONNECTION_NAME>`).
+- To avoid hard-coding secrets: **Navigation menu (☰)** → **Security** → **Secret Manager** → **Create Secret**.
+  - Name secrets like `db-password` and `jwt-secret` and paste the values.
+  - Later, map these secrets to environment variables in Cloud Run.
 
-### E6. Dockerize the backend
+### E7. Dockerize the backend
 Create Dockerfile at project root.
 ```
 # File: Dockerfile (NEW FILE)
@@ -806,7 +824,7 @@ JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=60
 ```
 
-### E7. Build and test Docker locally
+### E8. Build and test Docker locally
 1. From project root (venv not required):
    ```bash
    docker build -t skylynx-backend:local .
@@ -820,7 +838,7 @@ JWT_EXPIRE_MINUTES=60
    ```
 3. Visit http://127.0.0.1:8080/docs to test.
 
-### E8. Deploy to Cloud Run (with Cloud SQL)
+### E9. Deploy to Cloud Run (with Cloud SQL)
 1. Authenticate Docker with Google:
    ```bash
    gcloud auth configure-docker
@@ -842,11 +860,11 @@ JWT_EXPIRE_MINUTES=60
    ```
 4. After deployment, Cloud Run shows a public HTTPS URL (e.g., `https://skylynx-backend-xxxx.a.run.app`). Use this as `API_BASE` in the desktop app.
 
-### E9. Connect Cloud Run to Cloud SQL securely
+### E10. Connect Cloud Run to Cloud SQL securely
 - The `--add-cloudsql-instances` flag attaches the Cloud SQL instance.
 - Ensure the service account used by Cloud Run has `Cloud SQL Client` role.
 
-### E10. Run migrations on Cloud SQL
+### E11. Run migrations on Cloud SQL
 1. Use Cloud Shell or your local machine (with Cloud SQL proxy or direct socket) and run:
    ```bash
    cd backend
@@ -854,7 +872,7 @@ JWT_EXPIRE_MINUTES=60
    ```
    Make sure `DATABASE_URL` points to the Cloud SQL socket path as in `.env.example`.
 
----
+
 # PART F: Desktop Installer with PyInstaller
 ### F1. Install PyInstaller (inside venv)
 ```bash
