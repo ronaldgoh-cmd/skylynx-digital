@@ -1,40 +1,23 @@
-# backend/app/database.py
-
+# File: backend/app/database.py
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import sessionmaker, declarative_base
+from .config import DATABASE_URL
 
-from .config import settings
+if DATABASE_URL is None:
+    raise RuntimeError("DATABASE_URL is not set. Check your .env file.")
 
-
-class Base(DeclarativeBase):
-    """Base class for all ORM models."""
-    pass
-
-
-# Extra options for SQLite
+# SQLite needs special connect_args
 connect_args = {}
-if settings.database_url.startswith("sqlite"):
-    # Needed for SQLite when used in multi-threaded apps (like FastAPI + Uvicorn)
-    connect_args["check_same_thread"] = False
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
 
-# Create the SQLAlchemy engine
-engine = create_engine(
-    settings.database_url,
-    echo=False,
-    future=True,
-    connect_args=connect_args,
-)
-
-# Session factory
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
 
-# Dependency for FastAPI routes
 def get_db():
+    """FastAPI dependency: yield a DB session per request."""
     db = SessionLocal()
     try:
         yield db

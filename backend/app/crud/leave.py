@@ -1,10 +1,14 @@
-# File: backend/app/crud/leave.py (NEW FILE)
+# File: backend/app/crud/leave.py
 from sqlalchemy.orm import Session
 from .. import models, schemas
 
 
 def list_leaves(db: Session, company_id: int):
-    return db.query(models.Leave).filter(models.Leave.company_id == company_id).all()
+    return (
+        db.query(models.Leave)
+        .filter(models.Leave.company_id == company_id)
+        .all()
+    )
 
 
 def create_leave(db: Session, company_id: int, payload: schemas.LeaveCreate):

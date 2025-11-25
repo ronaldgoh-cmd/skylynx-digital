@@ -1,41 +1,11 @@
-from pydantic import AnyUrl, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from urllib.parse import unquote
+# File: backend/app/config.py
+import os
+from dotenv import load_dotenv
 
+# Load variables from .env
+load_dotenv()
 
-class Settings(BaseSettings):
-    # Default to a local SQLite database so development can proceed even if
-    # environment variables are missing or contain placeholder template values.
-    database_url: str = "sqlite:///./skylynx_local.db"
-    jwt_secret: str
-    jwt_algorithm: str = "HS256"
-    jwt_expire_minutes: int = 60
-
-    @field_validator("database_url")
-    @classmethod
-    def ensure_real_database_url(cls, value: AnyUrl) -> AnyUrl:
-        url_str = str(value)
-        decoded_url = unquote(url_str)
-
-        placeholder_markers = [
-            "<YOUR_DB_USER_HERE>",
-            "<YOUR_DB_PASSWORD_HERE>",
-            "<YOUR_DB_NAME_HERE>",
-        ]
-
-        if any(marker in decoded_url for marker in placeholder_markers):
-            raise ValueError(
-                "Please replace the placeholder database credentials in .env with real values "
-                "(e.g., DB user, password, and database name)."
-            )
-
-        return value
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-    )
-
-
-settings = Settings()
+DATABASE_URL = os.getenv("DATABASE_URL")
+JWT_SECRET = os.getenv("JWT_SECRET", "58479225ae35405bc65fa97af01fe5ca37ffc552b02b8c1f3f55247b0c703c30")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
