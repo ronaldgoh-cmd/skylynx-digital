@@ -7,9 +7,8 @@ from skylynx_digital.api_client import get_employees
 
 
 class EmployeesWindow(QtWidgets.QWidget):
-    def __init__(self, access_token: str, parent=None) -> None:
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.access_token = access_token
 
         self.setWindowTitle("Employees - Skylynx Digital")
 
@@ -31,7 +30,8 @@ class EmployeesWindow(QtWidgets.QWidget):
 
     def refresh_employees(self) -> None:
         try:
-            employees = get_employees(self.access_token)
+            # Token is taken from global session_state by default
+            employees = get_employees()
         except Exception as e:
             # In production, you may want a toast / status bar instead
             print(f"Error refreshing employees: {e}")

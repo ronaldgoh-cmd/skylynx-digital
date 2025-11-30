@@ -1,33 +1,53 @@
 # skylynx_digital/ui/main_window.py
+from __future__ import annotations
+
+from datetime import datetime
+from types import SimpleNamespace
+import re
+
 from PySide6.QtWidgets import (
-    QMainWindow, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QSizePolicy, QDialog, QLineEdit, QTreeWidget, QTreeWidgetItem,
-    QAbstractItemView, QDialogButtonBox, QDockWidget, QTabWidget, QStatusBar, QMenu,
-    QMessageBox
+    QMainWindow,
+    QLabel,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QSizePolicy,
+    QDialog,
+    QLineEdit,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QAbstractItemView,
+    QDialogButtonBox,
+    QDockWidget,
+    QTabWidget,
+    QStatusBar,
+    QMenu,
+    QMessageBox,
 )
 from PySide6.QtGui import QAction, QPixmap
 from PySide6.QtCore import QTimer, Qt, Signal
+from zoneinfo import ZoneInfo
 
-# Do NOT import LoginDialog here; app.py shows it on startup and after logout.
 from ..ui.company_settings_dialog import CompanySettingsDialog
 from ..ui.user_settings_dialog import UserSettingsDialog
 from ..ui.about_dialog import AboutDialog
 from ..core.database import SessionLocal
-from ..core.models import UserSettings, ModuleState, CompanySettings
+from ..core.models import ModuleState
 from ..core.plugins import discover_modules
 from ..core.permissions import has_permission, can_view
 from ..core import themes
-
-from ..core.auth import get_current_user  # login state comes from app.py
-
-from datetime import datetime
-from zoneinfo import ZoneInfo
-from types import SimpleNamespace
-import re
+from ..session_state import get_session
+from ..api_client import (
+    get_company_settings,
+    fetch_company_logo,
+    get_user_settings,
+    update_user_settings,
+)
 
 
 class MainWindow(QMainWindow):
-    # Emitted when user clicks Logout. app.py listens, closes this window, then shows LoginDialog.
+    # Emitted when user clicks Logout. __main__.py can listen, close this window, then show LoginDialog again.
     logout_requested = Signal()
     # Emitted when the user confirms they want to exit the entire application.
     exit_requested = Signal()
@@ -82,7 +102,7 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self._tick_clock)
         self.timer.start(1000)
 
-        # ---------- Bootstrap from already-authenticated user ----------
+        # ---------- Bootstrap from already-authenticated user (via cloud session) ----------
         self._bootstrap_user_from_auth_state()
         self._rebuild_nav()
         self._refresh_identity()
@@ -102,12 +122,16 @@ class MainWindow(QMainWindow):
         # Section 1: centered fixed title
         row1 = QHBoxLayout()
         row1.setContentsMargins(0, 0, 0, 0)
-        left_sp = QWidget(host); left_sp.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        right_sp = QWidget(host); right_sp.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        left_sp = QWidget(host)
+        left_sp.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        right_sp = QWidget(host)
+        right_sp.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.fixed_title = QLabel("SkyLynx Digital Solutions", host)
         self.fixed_title.setAlignment(Qt.AlignCenter)
         self.fixed_title.setStyleSheet("font-size: 18px; font-weight: 700;")
-        row1.addWidget(left_sp); row1.addWidget(self.fixed_title); row1.addWidget(right_sp)
+        row1.addWidget(left_sp)
+        row1.addWidget(self.fixed_title)
+        row1.addWidget(right_sp)
         v.addLayout(row1)
 
         # Section 2: logo + company name + line1 + line2
@@ -131,7 +155,9 @@ class MainWindow(QMainWindow):
         self.header_detail1.setStyleSheet("font-size: 12px;")
         self.header_detail2 = QLabel("", host)
         self.header_detail2.setStyleSheet("font-size: 12px;")
-        tv.addWidget(self.header_company); tv.addWidget(self.header_detail1); tv.addWidget(self.header_detail2)
+        tv.addWidget(self.header_company)
+        tv.addWidget(self.header_detail1)
+        tv.addWidget(self.header_detail2)
 
         row2.addWidget(self.header_logo, 0, Qt.AlignVCenter)
         row2.addWidget(text_box, 0, Qt.AlignVCenter)
@@ -174,21 +200,37 @@ class MainWindow(QMainWindow):
         return host
 
     def _refresh_identity(self):
-        with SessionLocal() as s:
-            cs = s.query(CompanySettings).first()
-        if not cs:
+        """
+        Populate header area from backend company settings.
+        """
+        try:
+            data = get_company_settings()
+        except Exception:
+            # If we cannot talk to backend, fall back to generic labels
             self.header_company.setText("Company Name")
             self.header_detail1.setText("")
             self.header_detail2.setText("")
             self.header_logo.clear()
             return
-        self.header_company.setText(cs.name or "Company Name")
-        self.header_detail1.setText(cs.detail1 or "")
-        self.header_detail2.setText(cs.detail2 or "")
-        if cs.logo:
+
+        self.header_company.setText(data.get("name") or "Company Name")
+        self.header_detail1.setText(data.get("detail1") or "")
+        self.header_detail2.setText(data.get("detail2") or "")
+
+        # Logo (if any)
+        try:
+            logo_bytes = fetch_company_logo()
+        except Exception:
+            logo_bytes = None
+
+        if logo_bytes:
             pm = QPixmap()
-            pm.loadFromData(cs.logo)
-            pm_scaled = pm.scaled(self.header_logo.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            pm.loadFromData(logo_bytes)
+            pm_scaled = pm.scaled(
+                self.header_logo.size(),
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation,
+            )
             self.header_logo.setPixmap(pm_scaled)
         else:
             self.header_logo.clear()
@@ -212,51 +254,49 @@ class MainWindow(QMainWindow):
 
     def _bootstrap_user_from_auth_state(self):
         """
-        Read authenticated user from auth. If ephemeral superadministrator,
-        do not write anything to DB.
+        Read authenticated user from the cloud session created by LoginDialog,
+        then fetch per-user settings (timezone/theme) from the backend.
         """
-        self.user = get_current_user()
-        if not self.user:
+        session = get_session()
+        if not session:
+            # No cloud session -> treat as not logged in
+            self.user = None
+            self.user_settings = None
             self.account_btn.setText("Not logged in")
             self.company_act_btn.setEnabled(False)
             self.modules_act_btn.setEnabled(False)
-            self.user_settings = None
             self._apply_theme()
             return
 
-        if self._is_ephemeral():
-            self.user_settings = SimpleNamespace(timezone="Asia/Singapore", theme="light")
-            self.account_btn.setText(self.user.username or "superadministrator")
-            self.company_act_btn.setEnabled(True)
-            self.modules_act_btn.setEnabled(True)
-            self._apply_theme()
-            return
-
-        # DB user: ensure settings in DB
-        with SessionLocal() as s:
-            us = s.query(UserSettings).filter(UserSettings.user_id == self.user.id).first()
-            if not us:
-                us = UserSettings(
-                    user_id=self.user.id,
-                    account_id=getattr(self.user, "account_id", "default") or "default",
-                    timezone="Asia/Singapore",
-                    theme="light",
-                )
-                s.add(us); s.commit(); s.refresh(us)
-            self.user_settings = us
-
-        self.account_btn.setText(self.user.username or "user")
-        self.company_act_btn.setEnabled(self.user.role in ("admin", "superadmin"))
-        self.modules_act_btn.setEnabled(
-            self.user.role == "superadmin" or has_permission(self.user.id, "modules.install")
+        # Build a lightweight "user" object for permission checks / labels
+        self.user = SimpleNamespace(
+            id=-1,
+            username=session.email or "cloud-user",
+            role="superadmin",  # full access so your nav/module manager still work
+            account_id=str(session.company_id),
         )
+
+        # Fetch user settings (timezone / theme) from backend; fall back to defaults
+        try:
+            data = get_user_settings()
+            tz = data.get("timezone") or "Asia/Singapore"
+            theme = (data.get("theme") or "light").lower()
+        except Exception:
+            tz = "Asia/Singapore"
+            theme = "light"
+
+        self.user_settings = SimpleNamespace(timezone=tz, theme=theme)
+        self.account_btn.setText(self.user.username or "user")
+        self.company_act_btn.setEnabled(True)
+        self.modules_act_btn.setEnabled(True)
         self._apply_theme()
 
     def _apply_theme(self):
         if not self.user_settings:
             self.setStyleSheet(themes.LIGHT)
             return
-        self.setStyleSheet(themes.DARK if self.user_settings.theme == "dark" else themes.LIGHT)
+        theme_key = (self.user_settings.theme or "light").lower()
+        self.setStyleSheet(themes.DARK if theme_key == "dark" else themes.LIGHT)
 
     def _tick_clock(self):
         tz_key = (self.user_settings.timezone if self.user_settings else "Etc/UTC") or "Etc/UTC"
@@ -376,7 +416,7 @@ class MainWindow(QMainWindow):
 
     # ===== Actions =====
     def open_company_settings(self):
-        if not self.user or self.user.role not in ("admin", "superadmin"):
+        if not self.user:
             return
         CompanySettingsDialog(self).exec()
         self._refresh_identity()
@@ -384,23 +424,27 @@ class MainWindow(QMainWindow):
     def open_user_settings(self):
         if not self.user_settings:
             return
-        if self._is_ephemeral():
-            QMessageBox.information(self, "Not available", "User settings are not persisted for superadministrator.")
-            return
+
         d = UserSettingsDialog(self.user_settings.timezone, self.user_settings.theme)
         if d.exec() == QDialog.Accepted:
             tz, theme = d.values()
-            with SessionLocal() as s:
-                us = s.query(UserSettings).get(self.user_settings.id)
-                us.timezone = tz
-                us.theme = theme
-                s.commit()
-                s.refresh(us)
-                self.user_settings = us
+            try:
+                update_user_settings(tz, theme)
+            except Exception as exc:
+                QMessageBox.critical(
+                    self,
+                    "User Settings",
+                    f"Failed to save settings:\n{exc}",
+                )
+                return
+
+            # Update local copy + re-apply theme
+            self.user_settings.timezone = tz
+            self.user_settings.theme = theme
             self._apply_theme()
 
     def open_module_manager(self):
-        """Install/enable modules and submodules."""
+        """Install/enable modules and submodules (still stored locally for now)."""
         if not self.user:
             return
         if not (self.user.role == "superadmin" or has_permission(self.user.id, "modules.install")):
@@ -488,7 +532,7 @@ class MainWindow(QMainWindow):
     def do_logout(self):
         """
         Do not show a login dialog here.
-        Close this window and let app.py show ONLY the login panel.
+        Close this window and let the outer app (__main__.py) decide what to do.
         """
         if self._closing_for_logout:
             return

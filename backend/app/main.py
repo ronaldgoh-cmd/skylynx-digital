@@ -1,16 +1,17 @@
-# backend/app/main.py
+# File: backend/app/main.py
 from fastapi import FastAPI
 from sqlalchemy import select
 
 from .database import Base, engine, SessionLocal
 from . import models
-from .routers import auth, employees, salary, leave
+from .routers import auth, employees, salary, leave, company_settings, user_settings
 from .security import hash_password
 
 
 def init_db() -> None:
     """
-    Create tables and ensure demo company, modules and admin user exist.
+    Create tables and ensure demo company, modules, admin user and
+    a default CompanySettings row exist.
     Safe to call multiple times.
     """
     # Create tables if they don't exist
@@ -29,7 +30,7 @@ def init_db() -> None:
 
         # 2) Ensure basic modules exist
         module_names = ["employees", "salary", "leave"]
-        modules: list[models.Module] = []
+        modules_list: list[models.Module] = []
         for name in module_names:
             m_stmt = select(models.Module).where(models.Module.name == name)
             m = db.execute(m_stmt).scalar_one_or_none()
@@ -38,10 +39,10 @@ def init_db() -> None:
                 db.add(m)
                 db.commit()
                 db.refresh(m)
-            modules.append(m)
+            modules_list.append(m)
 
         # 3) Ensure company-module links exist
-        for m in modules:
+        for m in modules_list:
             link_stmt = select(models.CompanyModule).where(
                 models.CompanyModule.company_id == company.id,
                 models.CompanyModule.module_id == m.id,
@@ -68,6 +69,21 @@ def init_db() -> None:
             )
             db.add(admin)
             db.commit()
+
+        # 5) Ensure a default CompanySettings row exists for the demo company
+        settings_stmt = select(models.CompanySettings).where(
+            models.CompanySettings.company_id == company.id
+        )
+        cs = db.execute(settings_stmt).scalar_one_or_none()
+        if cs is None:
+            cs = models.CompanySettings(
+                company_id=company.id,
+                name="Skylynx Demo",
+                detail1="",
+                detail2="",
+            )
+            db.add(cs)
+            db.commit()
     finally:
         db.close()
 
@@ -82,6 +98,8 @@ app.include_router(auth.router)
 app.include_router(employees.router)
 app.include_router(salary.router)
 app.include_router(leave.router)
+app.include_router(company_settings.router)
+app.include_router(user_settings.router)
 
 
 @app.get("/")

@@ -1,3 +1,6 @@
+# File: skylynx_digital/ui/company_settings_dialog.py
+from __future__ import annotations
+
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -13,17 +16,24 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
 )
 from PySide6.QtCore import QCoreApplication, Qt
+    # noqa
 from PySide6.QtGui import QPixmap
+
 from ..core.database import (
-    SessionLocal,
     get_module_db_path,
     wipe_module_database,
     create_backup,
     list_backups,
     restore_backup,
 )
-from ..core.models import CompanySettings
 from ..core.plugins import discover_modules
+from ..api_client import (
+    get_company_settings,
+    update_company_settings,
+    fetch_company_logo,
+    upload_company_logo,
+)
+
 
 class CompanySettingsDialog(QDialog):
     def __init__(self, parent=None):
@@ -81,48 +91,92 @@ class CompanySettingsDialog(QDialog):
 
         self.load_settings()
 
+    # ---------- Online settings ----------
+
     def load_settings(self):
-        with SessionLocal() as s:
-            cs = s.query(CompanySettings).first()
-            if not cs:
-                cs = CompanySettings()
-                s.add(cs)
-                s.commit()
-            self.name.setText(cs.name)
-            self.detail1.setText(cs.detail1)
-            self.detail2.setText(cs.detail2)
-            self.version.setText(cs.version)
-            self.about.setPlainText(cs.about)
-            if cs.logo:
-                pm = QPixmap()
-                pm.loadFromData(cs.logo)
-                self.logo_lbl.setPixmap(pm.scaledToHeight(64))
-            else:
-                self.logo_lbl.clear()
+        """
+        Pull company settings + logo from the backend.
+        """
+        try:
+            data = get_company_settings()
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Company Settings",
+                f"Unable to load settings from server:\n{exc}",
+            )
+            data = {}
+
+        self.name.setText(data.get("name") or "")
+        self.detail1.setText(data.get("detail1") or "")
+        self.detail2.setText(data.get("detail2") or "")
+        self.version.setText(data.get("version") or "")
+        self.about.setPlainText(data.get("about") or "")
+
+        # Load logo (if any)
+        try:
+            logo_bytes = fetch_company_logo()
+        except Exception:
+            logo_bytes = None
+
+        if logo_bytes:
+            pm = QPixmap()
+            pm.loadFromData(logo_bytes)
+            self.logo_lbl.setPixmap(pm.scaledToHeight(64))
+        else:
+            self.logo_lbl.clear()
+
+        # Reset temporary logo path
+        self.logo_path = ""
+
     def pick_logo(self):
-        p, _ = QFileDialog.getOpenFileName(self, "Select Logo", "", "Images (*.png *.jpg *.jpeg *.bmp)")
-        if p: self.logo_path = p; self.logo_lbl.setText(p)
+        p, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Logo",
+            "",
+            "Images (*.png *.jpg *.jpeg *.bmp)",
+        )
+        if p:
+            self.logo_path = p
+            self.logo_lbl.setText(p)
+
     def bump_version(self):
         parts = self.version.text().split(".")
         try:
-            parts[-1] = str(int(parts[-1]) + 1); self.version.setText(".".join(parts))
+            parts[-1] = str(int(parts[-1]) + 1)
+            self.version.setText(".".join(parts))
         except Exception:
+            # ignore invalid version formats
             pass
-    def save(self):
-        from PIL import Image
-        from io import BytesIO
 
-        logo_bytes = None
-        if self.logo_path:
-            img = Image.open(self.logo_path).convert("RGBA")
-            buf = BytesIO(); img.save(buf, format="PNG"); logo_bytes = buf.getvalue()
-        with SessionLocal() as s:
-            cs = s.query(CompanySettings).first()
-            cs.name = self.name.text(); cs.detail1 = self.detail1.text(); cs.detail2 = self.detail2.text()
-            cs.version = self.version.text(); cs.about = self.about.toPlainText()
-            if logo_bytes: cs.logo = logo_bytes
-            s.commit()
+    def save(self):
+        """
+        Save settings back to the backend (text + optional logo).
+        """
+        try:
+            update_company_settings(
+                name=self.name.text().strip(),
+                detail1=self.detail1.text().strip(),
+                detail2=self.detail2.text().strip(),
+                version=self.version.text().strip(),
+                about=self.about.toPlainText(),
+            )
+
+            if self.logo_path:
+                upload_company_logo(self.logo_path)
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Company Settings",
+                f"Failed to save settings:\n{exc}",
+            )
+            return
+
+        # Reload from server to reflect the actual stored values / logo
+        self.load_settings()
         self.accept()
+
+    # ---------- Backup / restore remain local to this workstation ----------
 
     def backup_data(self):
         from datetime import datetime
@@ -142,7 +196,11 @@ class CompanySettingsDialog(QDialog):
             metadata = create_backup(progress_callback)
         except Exception as exc:
             progress.cancel()
-            QMessageBox.critical(self, "Backup Failed", f"An error occurred while backing up the databases:\n{exc}")
+            QMessageBox.critical(
+                self,
+                "Backup Failed",
+                f"An error occurred while backing up the databases:\n{exc}",
+            )
             return
         finally:
             progress.setValue(progress.maximum())
@@ -152,13 +210,16 @@ class CompanySettingsDialog(QDialog):
         display_time = ""
         if created_at:
             try:
-                display_time = datetime.fromisoformat(created_at).strftime("%Y-%m-%d %H:%M:%S")
+                display_time = datetime.fromisoformat(created_at).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
             except Exception:
                 display_time = created_at
         QMessageBox.information(
             self,
             "Backup Complete",
-            "Database backup was created successfully." + (f"\nTimestamp: {display_time}" if display_time else ""),
+            "Database backup was created successfully."
+            + (f"\nTimestamp: {display_time}" if display_time else ""),
         )
 
     def restore_data(self):
@@ -183,7 +244,9 @@ class CompanySettingsDialog(QDialog):
             stamp = "Unknown"
             if created_at:
                 try:
-                    stamp = datetime.fromisoformat(created_at).strftime("%Y-%m-%d %H:%M:%S")
+                    stamp = datetime.fromisoformat(created_at).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
                 except Exception:
                     stamp = created_at
             item = QListWidgetItem(f"{stamp} — {meta.get('id')}", lw)
@@ -206,13 +269,20 @@ class CompanySettingsDialog(QDialog):
             meta = item.data(Qt.UserRole) or {}
             backup_id = meta.get("id")
             if not backup_id:
-                QMessageBox.warning(dialog, "Restore", "Selected backup is missing required information.")
+                QMessageBox.warning(
+                    dialog,
+                    "Restore",
+                    "Selected backup is missing required information.",
+                )
                 return
-            if QMessageBox.question(
-                dialog,
-                "Confirm Restore",
-                "Restoring from this backup will replace the current databases. Continue?",
-            ) != QMessageBox.Yes:
+            if (
+                QMessageBox.question(
+                    dialog,
+                    "Confirm Restore",
+                    "Restoring from this backup will replace the current databases. Continue?",
+                )
+                != QMessageBox.Yes
+            ):
                 return
 
             progress = QProgressDialog("Preparing restore…", None, 0, 1, self)
@@ -230,13 +300,21 @@ class CompanySettingsDialog(QDialog):
                 restore_backup(str(backup_id), progress_callback)
             except Exception as exc:
                 progress.cancel()
-                QMessageBox.critical(self, "Restore Failed", f"Unable to restore the backup:\n{exc}")
+                QMessageBox.critical(
+                    self,
+                    "Restore Failed",
+                    f"Unable to restore the backup:\n{exc}",
+                )
                 return
             finally:
                 progress.setValue(progress.maximum())
                 progress.close()
 
-            QMessageBox.information(self, "Restore Complete", "The databases have been restored successfully.")
+            QMessageBox.information(
+                self,
+                "Restore Complete",
+                "The databases have been restored successfully.",
+            )
             dialog.accept()
             self.load_settings()
 
@@ -246,14 +324,17 @@ class CompanySettingsDialog(QDialog):
         dialog.exec()
 
     def factory_reset(self):
-        if QMessageBox.warning(
-            self,
-            "Factory Reset",
-            "Please close all open module tabs and widgets before wiping the databases to "
-            "release any active connections. Continue?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
-        ) != QMessageBox.Yes:
+        if (
+            QMessageBox.warning(
+                self,
+                "Factory Reset",
+                "Please close all open module tabs and widgets before wiping the databases to "
+                "release any active connections. Continue?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            != QMessageBox.Yes
+        ):
             return
 
         module_entries: list[tuple[str, str, str]] = []
@@ -273,14 +354,20 @@ class CompanySettingsDialog(QDialog):
             module_entries.append((f"{name} ({path.name}){suffix}", key, str(path)))
 
         if not module_entries:
-            QMessageBox.information(self, "Factory Reset", "No module databases are available to wipe.")
+            QMessageBox.information(
+                self,
+                "Factory Reset",
+                "No module databases are available to wipe.",
+            )
             return
 
         d = QDialog(self)
         d.setWindowTitle("Factory Reset")
         v = QVBoxLayout(d)
 
-        info_lbl = QLabel("Select the module databases to delete. Account data is preserved.")
+        info_lbl = QLabel(
+            "Select the module databases to delete. Account data is preserved."
+        )
         info_lbl.setWordWrap(True)
         v.addWidget(info_lbl)
 
@@ -297,24 +384,37 @@ class CompanySettingsDialog(QDialog):
 
         def wipe():
             checked_items = [
-                lw.item(i) for i in range(lw.count()) if lw.item(i).checkState() == Qt.Checked
+                lw.item(i)
+                for i in range(lw.count())
+                if lw.item(i).checkState() == Qt.Checked
             ]
             if not checked_items:
-                QMessageBox.information(d, "Factory Reset", "Select at least one module database to wipe.")
+                QMessageBox.information(
+                    d,
+                    "Factory Reset",
+                    "Select at least one module database to wipe.",
+                )
                 return
             summary = "\n".join(it.text() for it in checked_items)
-            if QMessageBox.question(
-                d,
-                "Confirm Wipe",
-                f"Delete the following module database(s)?\n\n{summary}",
-            ) != QMessageBox.Yes:
+            if (
+                QMessageBox.question(
+                    d,
+                    "Confirm Wipe",
+                    f"Delete the following module database(s)?\n\n{summary}",
+                )
+                != QMessageBox.Yes
+            ):
                 return
             for it in checked_items:
                 data = it.data(Qt.UserRole) or {}
                 key = data.get("key")
                 if key:
                     wipe_module_database(key)
-            QMessageBox.information(d, "Factory Reset", "Selected module databases have been wiped.")
+            QMessageBox.information(
+                d,
+                "Factory Reset",
+                "Selected module databases have been wiped.",
+            )
             d.accept()
 
         run.clicked.connect(wipe)

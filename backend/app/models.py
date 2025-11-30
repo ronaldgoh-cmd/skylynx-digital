@@ -8,8 +8,11 @@ from sqlalchemy import (
     Date,
     Numeric,
     UniqueConstraint,
+    LargeBinary,
+    Text,
 )
 from sqlalchemy.orm import relationship
+
 from .database import Base
 
 
@@ -29,6 +32,12 @@ class Company(Base):
     users = relationship(
         "User",
         back_populates="company",
+        cascade="all, delete-orphan",
+    )
+    settings = relationship(
+        "CompanySettings",
+        back_populates="company",
+        uselist=False,
         cascade="all, delete-orphan",
     )
 
@@ -74,6 +83,54 @@ class User(Base):
     is_active = Column(Boolean, default=True)
 
     company = relationship("Company", back_populates="users")
+    settings = relationship(
+        "UserSettings",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+
+class CompanySettings(Base):
+    """
+    Per-company UI / branding settings shared across all branches.
+    """
+    __tablename__ = "company_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(
+        Integer,
+        ForeignKey("companies.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
+    name = Column(String, nullable=True)
+    detail1 = Column(String, nullable=True)
+    detail2 = Column(String, nullable=True)
+    version = Column(String, nullable=True)
+    about = Column(Text, nullable=True)
+    logo = Column(LargeBinary, nullable=True)
+
+    company = relationship("Company", back_populates="settings")
+
+
+class UserSettings(Base):
+    """
+    Per-user preferences such as timezone and theme.
+    """
+    __tablename__ = "user_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
+    timezone = Column(String, nullable=True, default="Asia/Singapore")
+    theme = Column(String, nullable=True, default="light")
+
+    user = relationship("User", back_populates="settings")
 
 
 class Employee(Base):

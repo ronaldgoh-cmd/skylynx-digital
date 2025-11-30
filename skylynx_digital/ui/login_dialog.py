@@ -21,12 +21,13 @@ class LoginDialog(QDialog):
     """
     Simple login dialog that talks to the FastAPI backend.
 
-    After exec_():
+    After exec():
       - if result() == QDialog.Accepted:
           self.access_token  (str)
           self.company_id    (int)
           self.modules       (list[str])
     """
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Skylynx Digital - Login")
@@ -104,7 +105,7 @@ class LoginDialog(QDialog):
             self.login_button.setText("Login")
             return
 
-        # Success
+        # Success: store values on the dialog, session is handled by __main__.py
         self.access_token = token
         self.company_id = company_id
         self.modules = modules

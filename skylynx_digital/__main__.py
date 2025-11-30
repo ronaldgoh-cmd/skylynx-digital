@@ -1,30 +1,26 @@
-# File: skylynx_digital/__main__.py
 from __future__ import annotations
 
 import sys
 from PySide6.QtWidgets import QApplication
 
 from skylynx_digital.ui.login_dialog import LoginDialog
-from skylynx_digital.ui.employees_window import EmployeesWindow
+from skylynx_digital.ui.main_window import MainWindow
+from skylynx_digital.session_state import set_session
 
 
 def main() -> int:
     app = QApplication(sys.argv)
 
-    # 1) Show login dialog
-    login_dialog = LoginDialog()
-    if login_dialog.exec() != LoginDialog.Accepted:
-        return 0  # user cancelled
+    # 1) Show cloud login dialog
+    dlg = LoginDialog()
+    if dlg.exec() != LoginDialog.Accepted:
+        return 0
 
-    access_token = login_dialog.access_token
-    company_id = login_dialog.company_id
-    modules = login_dialog.modules
+    # 2) Store session for the rest of the app
+    set_session(dlg.access_token, dlg.company_id, dlg.modules)
 
-    print("Logged in as company_id:", company_id)
-    print("Modules:", modules)
-
-    # 2) For now, just show Employees window
-    win = EmployeesWindow(access_token)
+    # 3) Show your full ERP main window (same frame of work as before)
+    win = MainWindow()
     win.show()
 
     return app.exec()
