@@ -5,16 +5,17 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
-    status,
     UploadFile,
     File,
     Response,
+    status,
 )
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from .. import models, schemas
 from ..database import get_db
-from ..security import get_current_user
+from .auth import get_current_user
 
 router = APIRouter(tags=["settings"])
 
@@ -22,43 +23,48 @@ router = APIRouter(tags=["settings"])
 # ---------- Company settings ----------
 
 
-@router.get("/company/settings", response_model=schemas.CompanySettingsOut)
+@router.get(
+    "/company/settings",
+    response_model=schemas.CompanySettingsOut,
+)
 def get_company_settings(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """
-    Return the CompanySettings for the logged-in user's company.
-    If missing, create a default row.
+    Return the company settings for the logged-in user's company.
+    If none exist yet, create a default row.
     """
-    company_id = current_user.company_id
-    if company_id is None:
+    if not current_user.company_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is not attached to a company.",
+            detail="User is not linked to a company.",
         )
 
-    cs = (
-        db.query(models.CompanySettings)
-        .filter(models.CompanySettings.company_id == company_id)
-        .first()
+    # Find or create settings row
+    stmt = select(models.CompanySettings).where(
+        models.CompanySettings.company_id == current_user.company_id
     )
+    cs = db.execute(stmt).scalar_one_or_none()
+
     if cs is None:
+        # Look up company name for a nicer default
+        company = db.get(models.Company, current_user.company_id)
+        name = company.name if company else "Company"
         cs = models.CompanySettings(
-            company_id=company_id,
-            name="Skylynx Demo",
+            company_id=current_user.company_id,
+            name=name,
             detail1="",
             detail2="",
-            version="1.0.0",
-            about="",
+            version=None,
+            about=None,
+            logo=None,
         )
         db.add(cs)
         db.commit()
         db.refresh(cs)
 
     return schemas.CompanySettingsOut(
-        id=cs.id,
-        company_id=cs.company_id,
         name=cs.name,
         detail1=cs.detail1,
         detail2=cs.detail2,
@@ -68,52 +74,62 @@ def get_company_settings(
     )
 
 
-@router.put("/company/settings", response_model=schemas.CompanySettingsOut)
+@router.put(
+    "/company/settings",
+    response_model=schemas.CompanySettingsOut,
+)
 def update_company_settings(
     payload: schemas.CompanySettingsUpdate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """
-    Update company settings for the logged-in user's company.
-    Only non-None fields are updated.
+    Update basic company settings fields for the logged-in user's company.
     """
-    company_id = current_user.company_id
-    if company_id is None:
+    if not current_user.company_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is not attached to a company.",
+            detail="User is not linked to a company.",
         )
 
-    cs = (
-        db.query(models.CompanySettings)
-        .filter(models.CompanySettings.company_id == company_id)
-        .first()
+    stmt = select(models.CompanySettings).where(
+        models.CompanySettings.company_id == current_user.company_id
     )
+    cs = db.execute(stmt).scalar_one_or_none()
+
     if cs is None:
+        # Create if missing
+        company = db.get(models.Company, current_user.company_id)
+        name = company.name if company else "Company"
         cs = models.CompanySettings(
-            company_id=company_id,
-            name="Skylynx Demo",
+            company_id=current_user.company_id,
+            name=name,
             detail1="",
             detail2="",
-            version="1.0.0",
-            about="",
+            version=None,
+            about=None,
+            logo=None,
         )
         db.add(cs)
         db.commit()
         db.refresh(cs)
 
-    for field in ["name", "detail1", "detail2", "version", "about"]:
-        value = getattr(payload, field)
-        if value is not None:
-            setattr(cs, field, value)
+    # Only overwrite fields that are provided (not None)
+    if payload.name is not None:
+        cs.name = payload.name
+    if payload.detail1 is not None:
+        cs.detail1 = payload.detail1
+    if payload.detail2 is not None:
+        cs.detail2 = payload.detail2
+    if payload.version is not None:
+        cs.version = payload.version
+    if payload.about is not None:
+        cs.about = payload.about
 
     db.commit()
     db.refresh(cs)
 
     return schemas.CompanySettingsOut(
-        id=cs.id,
-        company_id=cs.company_id,
         name=cs.name,
         detail1=cs.detail1,
         detail2=cs.detail2,
@@ -129,83 +145,95 @@ def get_company_logo(
     current_user: models.User = Depends(get_current_user),
 ):
     """
-    Return the company logo bytes (PNG) if set.
+    Return the company logo as raw PNG bytes.
     """
-    company_id = current_user.company_id
-    if company_id is None:
+    if not current_user.company_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is not attached to a company.",
+            detail="User is not linked to a company.",
         )
 
-    cs = (
-        db.query(models.CompanySettings)
-        .filter(models.CompanySettings.company_id == company_id)
-        .first()
+    stmt = select(models.CompanySettings).where(
+        models.CompanySettings.company_id == current_user.company_id
     )
+    cs = db.execute(stmt).scalar_one_or_none()
+
     if cs is None or not cs.logo:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No logo set.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Logo not set.",
+        )
 
     return Response(content=cs.logo, media_type="image/png")
 
 
-@router.post("/company/logo")
+@router.post("/company/logo", status_code=status.HTTP_204_NO_CONTENT)
 async def upload_company_logo(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """
-    Upload/replace the company logo (stored as PNG bytes).
+    Upload or replace the company logo. We store raw bytes as PNG in the DB.
     """
-    company_id = current_user.company_id
-    if company_id is None:
+    if not current_user.company_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is not attached to a company.",
+            detail="User is not linked to a company.",
         )
 
-    data = await file.read()
-    if not data:
+    content = await file.read()
+    if not content:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Empty logo file.",
+            detail="Empty file.",
         )
 
-    cs = (
-        db.query(models.CompanySettings)
-        .filter(models.CompanySettings.company_id == company_id)
-        .first()
+    stmt = select(models.CompanySettings).where(
+        models.CompanySettings.company_id == current_user.company_id
     )
+    cs = db.execute(stmt).scalar_one_or_none()
+
     if cs is None:
-        cs = models.CompanySettings(company_id=company_id)
+        company = db.get(models.Company, current_user.company_id)
+        name = company.name if company else "Company"
+        cs = models.CompanySettings(
+            company_id=current_user.company_id,
+            name=name,
+            detail1="",
+            detail2="",
+            version=None,
+            about=None,
+            logo=None,
+        )
         db.add(cs)
         db.commit()
         db.refresh(cs)
 
-    cs.logo = data
+    cs.logo = content
     db.commit()
-
-    return {"ok": True}
+    # 204 → no body
 
 
 # ---------- User settings ----------
 
 
-@router.get("/user/settings/me", response_model=schemas.UserSettingsOut)
-def get_my_user_settings(
+@router.get(
+    "/user/settings/me",
+    response_model=schemas.UserSettingsOut,
+)
+def get_my_settings(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """
-    Read the current user's UI settings.
-    If missing, create a default row.
+    Return (and lazily create) user-specific settings for the logged-in user.
     """
-    us = (
-        db.query(models.UserSettings)
-        .filter(models.UserSettings.user_id == current_user.id)
-        .first()
+    stmt = select(models.UserSettings).where(
+        models.UserSettings.user_id == current_user.id
     )
+    us = db.execute(stmt).scalar_one_or_none()
+
     if us is None:
         us = models.UserSettings(
             user_id=current_user.id,
@@ -218,26 +246,28 @@ def get_my_user_settings(
 
     return schemas.UserSettingsOut(
         id=us.id,
-        user_id=us.user_id,
         timezone=us.timezone,
         theme=us.theme,
     )
 
 
-@router.put("/user/settings/me", response_model=schemas.UserSettingsOut)
-def update_my_user_settings(
+@router.put(
+    "/user/settings/me",
+    response_model=schemas.UserSettingsOut,
+)
+def update_my_settings(
     payload: schemas.UserSettingsUpdate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """
-    Update the current user's UI settings.
+    Update timezone/theme for the logged-in user.
     """
-    us = (
-        db.query(models.UserSettings)
-        .filter(models.UserSettings.user_id == current_user.id)
-        .first()
+    stmt = select(models.UserSettings).where(
+        models.UserSettings.user_id == current_user.id
     )
+    us = db.execute(stmt).scalar_one_or_none()
+
     if us is None:
         us = models.UserSettings(
             user_id=current_user.id,
@@ -258,7 +288,6 @@ def update_my_user_settings(
 
     return schemas.UserSettingsOut(
         id=us.id,
-        user_id=us.user_id,
         timezone=us.timezone,
         theme=us.theme,
     )

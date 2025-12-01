@@ -1,13 +1,13 @@
 # backend/app/schemas.py
-from __future__ import annotations
-
 from datetime import date
 from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr
 
 
-# ---------- Modules / companies / users ----------
+# ---------------------------------------------------------------------------
+# Modules / Companies / Users
+# ---------------------------------------------------------------------------
 
 
 class ModuleBase(BaseModel):
@@ -24,7 +24,7 @@ class Module(ModuleBase):
     is_active: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class CompanyBase(BaseModel):
@@ -41,7 +41,7 @@ class Company(CompanyBase):
     modules: List[Module] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserCreate(BaseModel):
@@ -57,7 +57,7 @@ class User(BaseModel):
     is_active: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Token(BaseModel):
@@ -72,7 +72,9 @@ class LoginRequest(BaseModel):
     password: str
 
 
-# ---------- Employees / salary / leave ----------
+# ---------------------------------------------------------------------------
+# Employees / Salary / Leave
+# ---------------------------------------------------------------------------
 
 
 class EmployeeBase(BaseModel):
@@ -90,7 +92,7 @@ class Employee(EmployeeBase):
     company_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class SalaryBase(BaseModel):
@@ -108,7 +110,7 @@ class Salary(SalaryBase):
     company_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class LeaveBase(BaseModel):
@@ -127,10 +129,12 @@ class Leave(LeaveBase):
     company_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
-# ---------- Company / user settings for UI ----------
+# ---------------------------------------------------------------------------
+# Company / User settings for UI
+# ---------------------------------------------------------------------------
 
 
 class CompanySettingsBase(BaseModel):
@@ -142,21 +146,16 @@ class CompanySettingsBase(BaseModel):
 
 
 class CompanySettingsOut(CompanySettingsBase):
-    """
-    What the API returns to the desktop app for /company/settings.
-    """
-    id: int
-    company_id: int
+    # Optional so the router can omit them if needed
+    id: Optional[int] = None
+    company_id: Optional[int] = None
     has_logo: bool = False
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class CompanySettingsUpdate(CompanySettingsBase):
-    """
-    Partial update: any field can be omitted (left as None) and will not be changed.
-    """
     pass
 
 
@@ -167,14 +166,10 @@ class UserSettingsBase(BaseModel):
 
 class UserSettingsOut(UserSettingsBase):
     id: int
-    user_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserSettingsUpdate(UserSettingsBase):
-    """
-    Partial update: timezone and/or theme may be provided.
-    """
     pass
