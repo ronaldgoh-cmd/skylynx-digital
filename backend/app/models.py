@@ -9,6 +9,7 @@ from sqlalchemy import (
     Numeric,
     UniqueConstraint,
     LargeBinary,
+    Text,
 )
 from sqlalchemy.orm import relationship
 
@@ -33,22 +34,6 @@ class Company(Base):
         back_populates="company",
         cascade="all, delete-orphan",
     )
-    employees = relationship(
-        "Employee",
-        back_populates="company",
-        cascade="all, delete-orphan",
-    )
-    salaries = relationship(
-        "Salary",
-        back_populates="company",
-        cascade="all, delete-orphan",
-    )
-    leaves = relationship(
-        "Leave",
-        back_populates="company",
-        cascade="all, delete-orphan",
-    )
-    # One row of UI header info per company
     settings = relationship(
         "CompanySettings",
         back_populates="company",
@@ -94,11 +79,10 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"))
+    company_id = Column(Integer, ForeignKey("companies.id"))
     is_active = Column(Boolean, default=True)
 
     company = relationship("Company", back_populates="users")
-    # One set of UI preferences per user
     settings = relationship(
         "UserSettings",
         back_populates="user",
@@ -111,55 +95,34 @@ class Employee(Base):
     __tablename__ = "employees"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), index=True)
     name = Column(String, nullable=False)
     role = Column(String, nullable=True)
     hire_date = Column(Date, nullable=True)
-
-    company = relationship("Company", back_populates="employees")
-    salaries = relationship(
-        "Salary",
-        back_populates="employee",
-        cascade="all, delete-orphan",
-    )
-    leaves = relationship(
-        "Leave",
-        back_populates="employee",
-        cascade="all, delete-orphan",
-    )
 
 
 class Salary(Base):
     __tablename__ = "salaries"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), index=True)
-    employee_id = Column(Integer, ForeignKey("employees.id", ondelete="CASCADE"))
+    company_id = Column(Integer, ForeignKey("companies.id"), index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"))
     amount = Column(Numeric(12, 2), nullable=False)
     pay_date = Column(Date, nullable=False)
-
-    company = relationship("Company", back_populates="salaries")
-    employee = relationship("Employee", back_populates="salaries")
 
 
 class Leave(Base):
     __tablename__ = "leaves"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), index=True)
-    employee_id = Column(Integer, ForeignKey("employees.id", ondelete="CASCADE"))
+    company_id = Column(Integer, ForeignKey("companies.id"), index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"))
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     status = Column(String, default="pending")
 
-    company = relationship("Company", back_populates="leaves")
-    employee = relationship("Employee", back_populates="leaves")
-
 
 class CompanySettings(Base):
-    """
-    Shared header info per company (used by main_window & Company Settings dialog).
-    """
     __tablename__ = "company_settings"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -168,23 +131,20 @@ class CompanySettings(Base):
         ForeignKey("companies.id", ondelete="CASCADE"),
         unique=True,
         index=True,
+        nullable=False,
     )
 
     name = Column(String, nullable=True)
     detail1 = Column(String, nullable=True)
     detail2 = Column(String, nullable=True)
     version = Column(String, nullable=True)
-    about = Column(String, nullable=True)
-    # Stored as PNG bytes from the desktop app
+    about = Column(Text, nullable=True)
     logo = Column(LargeBinary, nullable=True)
 
     company = relationship("Company", back_populates="settings")
 
 
 class UserSettings(Base):
-    """
-    Per-user UI preferences (timezone, light/dark theme, etc.).
-    """
     __tablename__ = "user_settings"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -193,6 +153,7 @@ class UserSettings(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         unique=True,
         index=True,
+        nullable=False,
     )
     timezone = Column(String, nullable=True)
     theme = Column(String, nullable=True)

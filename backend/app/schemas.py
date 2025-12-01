@@ -5,9 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 
 
-# ---------------------------------------------------------------------------
-# Modules / Companies / Users
-# ---------------------------------------------------------------------------
+# ---------- Modules / companies / users ----------
 
 
 class ModuleBase(BaseModel):
@@ -24,7 +22,7 @@ class Module(ModuleBase):
     is_active: bool
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class CompanyBase(BaseModel):
@@ -41,7 +39,7 @@ class Company(CompanyBase):
     modules: List[Module] = []
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class UserCreate(BaseModel):
@@ -57,7 +55,7 @@ class User(BaseModel):
     is_active: bool
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class Token(BaseModel):
@@ -72,9 +70,7 @@ class LoginRequest(BaseModel):
     password: str
 
 
-# ---------------------------------------------------------------------------
-# Employees / Salary / Leave
-# ---------------------------------------------------------------------------
+# ---------- Employees / salary / leave ----------
 
 
 class EmployeeBase(BaseModel):
@@ -92,7 +88,7 @@ class Employee(EmployeeBase):
     company_id: int
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class SalaryBase(BaseModel):
@@ -110,7 +106,7 @@ class Salary(SalaryBase):
     company_id: int
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class LeaveBase(BaseModel):
@@ -129,12 +125,10 @@ class Leave(LeaveBase):
     company_id: int
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
-# ---------------------------------------------------------------------------
-# Company / User settings for UI
-# ---------------------------------------------------------------------------
+# ---------- Company / user settings for UI ----------
 
 
 class CompanySettingsBase(BaseModel):
@@ -146,13 +140,13 @@ class CompanySettingsBase(BaseModel):
 
 
 class CompanySettingsOut(CompanySettingsBase):
-    # Optional so the router can omit them if needed
+    # Optional so router can choose to include or omit them safely
     id: Optional[int] = None
     company_id: Optional[int] = None
     has_logo: bool = False
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class CompanySettingsUpdate(CompanySettingsBase):
@@ -168,7 +162,7 @@ class UserSettingsOut(UserSettingsBase):
     id: int
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class UserSettingsUpdate(UserSettingsBase):

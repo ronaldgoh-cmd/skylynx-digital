@@ -1,10 +1,10 @@
-# File: backend/app/main.py
+# backend/app/main.py
 from fastapi import FastAPI
 from sqlalchemy import select
 
 from .database import Base, engine, SessionLocal
 from . import models
-from .routers import auth, employees, salary, leave, company_settings, user_settings
+from .routers import auth, employees, salary, leave, settings
 from .security import hash_password
 
 
@@ -12,6 +12,7 @@ def init_db() -> None:
     """
     Create tables and ensure demo company, modules, admin user and
     a default CompanySettings row exist.
+
     Safe to call multiple times.
     """
     # Create tables if they don't exist
@@ -81,6 +82,8 @@ def init_db() -> None:
                 name="Skylynx Demo",
                 detail1="",
                 detail2="",
+                version="",
+                about="",
             )
             db.add(cs)
             db.commit()
@@ -98,8 +101,7 @@ app.include_router(auth.router)
 app.include_router(employees.router)
 app.include_router(salary.router)
 app.include_router(leave.router)
-app.include_router(company_settings.router)
-app.include_router(user_settings.router)
+app.include_router(settings.router)
 
 
 @app.get("/")
